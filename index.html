@@ -2340,11 +2340,11 @@ function gerarRelatorio() {
       const bold = d.loja===loja ? "font-weight:700;" : "";
       const dif = i===0 ? '<span style="color:#1a9e5c">★ lider</span>' : `<span style="color:#c0392b">-${R(sortV[i-1].vendas-d.vendas)}</span>`;
       return `<tr style="${bg}">
-        <td style="padding:5px 8px;font-size:10px;${bold}">${i+1}</td>
-        <td style="padding:5px 8px;font-size:10px;${bold}">${sName(d.nome)}</td>
+        <td style="padding:3px 5px;font-size:9px;${bold}">${i+1}</td>
+        <td style="padding:3px 5px;font-size:9px;${bold}">${sName(d.nome)}</td>
         <td style="padding:5px 8px;font-size:10px"><span style="background:${(LOJA_CORES_RPT[d.loja]||'#888')}22;color:${LOJA_CORES_RPT[d.loja]||'#888'};padding:2px 6px;border-radius:4px;font-size:9px;font-weight:600">${d.loja}</span></td>
         <td style="padding:5px 8px;font-size:10px">${dif}</td>
-        <td style="padding:5px 8px;font-size:10px;font-weight:600;color:#0077cc;text-align:right">${R(d.vendas)}</td>
+        <td style="padding:3px 5px;font-size:9px;font-weight:600;color:#0077cc;text-align:right">${R(d.vendas)}</td>
       </tr>`;
     }).join("");
 
@@ -2354,11 +2354,11 @@ function gerarRelatorio() {
       const bg = d.loja===loja ? "background:#fff8f0;" : "";
       const bold = d.loja===loja ? "font-weight:700;" : "";
       return `<tr style="${bg}">
-        <td style="padding:5px 8px;font-size:10px;${bold}">${i+1}</td>
-        <td style="padding:5px 8px;font-size:10px;${bold}">${sName(d.nome)}</td>
+        <td style="padding:3px 5px;font-size:9px;${bold}">${i+1}</td>
+        <td style="padding:3px 5px;font-size:9px;${bold}">${sName(d.nome)}</td>
         <td style="padding:5px 8px;font-size:10px"><span style="background:${(LOJA_CORES_RPT[d.loja]||'#888')}22;color:${LOJA_CORES_RPT[d.loja]||'#888'};padding:2px 6px;border-radius:4px;font-size:9px;font-weight:600">${d.loja}</span></td>
-        <td style="padding:5px 8px;font-size:10px;text-align:right;color:#888">${d.pecas}</td>
-        <td style="padding:5px 8px;font-size:10px;font-weight:600;color:#6c3fc7;text-align:right">${N(d.ppv)}</td>
+        <td style="padding:3px 5px;font-size:9px;text-align:right;color:#888">${d.pecas}</td>
+        <td style="padding:3px 5px;font-size:9px;font-weight:600;color:#6c3fc7;text-align:right">${N(d.ppv)}</td>
       </tr>`;
     }).join("");
 
@@ -2369,17 +2369,17 @@ function gerarRelatorio() {
       const bold = d.loja===loja ? "font-weight:700;" : "";
       const nV = d.vendas>0&&d.ticket>0 ? Math.round(d.vendas/d.ticket) : "—";
       return `<tr style="${bg}">
-        <td style="padding:5px 8px;font-size:10px;${bold}">${i+1}</td>
-        <td style="padding:5px 8px;font-size:10px;${bold}">${sName(d.nome)}</td>
+        <td style="padding:3px 5px;font-size:9px;${bold}">${i+1}</td>
+        <td style="padding:3px 5px;font-size:9px;${bold}">${sName(d.nome)}</td>
         <td style="padding:5px 8px;font-size:10px"><span style="background:${(LOJA_CORES_RPT[d.loja]||'#888')}22;color:${LOJA_CORES_RPT[d.loja]||'#888'};padding:2px 6px;border-radius:4px;font-size:9px;font-weight:600">${d.loja}</span></td>
-        <td style="padding:5px 8px;font-size:10px;text-align:right;color:#888">${nV}</td>
-        <td style="padding:5px 8px;font-size:10px;font-weight:600;color:#b58800;text-align:right">${R(d.ticket)}</td>
+        <td style="padding:3px 5px;font-size:9px;text-align:right;color:#888">${nV}</td>
+        <td style="padding:3px 5px;font-size:9px;font-weight:600;color:#b58800;text-align:right">${R(d.ticket)}</td>
       </tr>`;
     }).join("");
 
-    const thStyle = "padding:6px 8px;font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#888;border-bottom:2px solid #e2e6ea;text-align:left;background:#f8f9fa;";
+    const thStyle = "padding:3px 5px;font-size:8px;text-transform:uppercase;letter-spacing:0.06em;color:#888;border-bottom:2px solid #e2e6ea;text-align:left;background:#f8f9fa;white-space:nowrap;";
     const tableWrap = (title, color, thead, tbody) => `
-      <div style="margin-bottom:20px">
+      <div style="margin-bottom:10px">
         <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:${color};margin-bottom:6px">${title}</div>
         <table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">
           <thead><tr>${thead}</tr></thead>
@@ -2390,72 +2390,92 @@ function gerarRelatorio() {
 
     return `
       <div class="rpt-section-title">📊 Indicadores — Rankings do Grupo (${grupo === "VERMELHAS" ? "🔴 Vermelhas" : "👓 Óticas"})</div>
-      ${tableWrap("💰 Ranking Vendas",  "#0077cc",
-        `<th style="${thStyle}">#</th><th style="${thStyle}">Vendedor</th><th style="${thStyle}">Loja</th><th style="${thStyle}">Diferença</th><th style="${thStyle};text-align:right">Vendas</th>`,
-        rankVHTML)}
-      ${tableWrap("📦 Ranking PA", "#6c3fc7",
-        `<th style="${thStyle}">#</th><th style="${thStyle}">Vendedor</th><th style="${thStyle}">Loja</th><th style="${thStyle};text-align:right">Peças</th><th style="${thStyle};text-align:right">PA</th>`,
-        rankPAHTML)}
-      ${tableWrap("🎯 Ranking TM", "#b58800",
-        `<th style="${thStyle}">#</th><th style="${thStyle}">Vendedor</th><th style="${thStyle}">Loja</th><th style="${thStyle};text-align:right">Nº Vendas</th><th style="${thStyle};text-align:right">TM</th>`,
-        rankTMHTML)}`;
+      <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:10px;align-items:start">
+        <div>${tableWrap("💰 Vendas","#0077cc",
+          \`<th style="${thStyle}">#</th><th style="${thStyle}">Vendedor</th><th style="${thStyle}">Loja</th><th style="${thStyle};text-align:right">Dif.</th><th style="${thStyle};text-align:right">Vendas</th>\`,
+          rankVHTML)}</div>
+        <div>${tableWrap("📦 PA","#6c3fc7",
+          \`<th style="${thStyle}">#</th><th style="${thStyle}">Vendedor</th><th style="${thStyle}">Loja</th><th style="${thStyle};text-align:right">Peças</th><th style="${thStyle};text-align:right">PA</th>\`,
+          rankPAHTML)}</div>
+        <div>${tableWrap("🎯 TM","#b58800",
+          \`<th style="${thStyle}">#</th><th style="${thStyle}">Vendedor</th><th style="${thStyle}">Loja</th><th style="${thStyle};text-align:right">Nº</th><th style="${thStyle};text-align:right">TM</th>\`,
+          rankTMHTML)}</div>
+      </div>`;
   }
 
   // ──── SEÇÃO 2: Curva ────
   function secCurva() {
     const entry = Object.entries(CURVA_TO_LOJA).find(([,v])=>v===loja);
-    if(!entry) return '<div class="rpt-section-title">📈 Curva de Venda</div><p style="color:#888;font-size:11px">Sem dados de curva para esta loja.</p>';
+    if(!entry) return '<div class="rpt-section-title">📈 Curva de Venda</div><p style="color:#888;font-size:10px">Sem dados de curva para esta loja.</p>';
     const li = parseInt(entry[0]);
     const d1Idx = getD1Idx();
     const fatReal = allData.filter(d=>d.loja===loja).reduce((s,d)=>s+d.vendas,0);
     const espHoje = CURVA_RAW.slice(0, d1Idx+1).reduce((s,r)=>s+(r.vals[li]||0),0);
     const meta    = META_MENSAL[li]||0;
     const desvio  = fatReal - espHoje;
-    const pctMeta = meta>0 ? (fatReal/meta*100) : 0;
+    const pctMeta = meta>0?(fatReal/meta*100):0;
     const dentro  = desvio >= 0;
     const faltaMeta = meta - fatReal;
     const diasRest  = CURVA_RAW.slice(d1Idx+1).filter(r=>r.vals[li]>0).length;
-    const metaDia   = diasRest>0 ? faltaMeta/diasRest : 0;
+    const metaDia   = diasRest>0?faltaMeta/diasRest:0;
+    const td = "padding:3px 5px;font-size:9px;border-bottom:1px solid #f0f0f0;";
+    const th = "padding:4px 5px;font-size:8px;text-transform:uppercase;letter-spacing:0.07em;color:#888;border-bottom:2px solid #e2e6ea;background:#f8f9fa;";
 
-    // tabela diária
-    const diasComVal = CURVA_RAW.slice(0, d1Idx+1).filter(r=>r.vals[li]>0);
-    const diasRows = diasComVal.map(r => {
-      const dia = r.data;
+    // Faturamento diário REAL (de faturamentoData) + curva esperada lado a lado
+    const fatDiario = getFatDiarioPorLoja(loja); // { dia: valor }
+    const diasComCurva = CURVA_RAW.filter(r => {
+      const d = parseInt(r.data.split("/")[0]);
+      return r.vals[li]>0 && d <= (CURVA_RAW[d1Idx]?parseInt(CURVA_RAW[d1Idx].data.split("/")[0]):99);
+    });
+    let acumReal=0, acumCurva=0;
+    const diasRows = diasComCurva.map(r => {
+      const dia = parseInt(r.data.split("/")[0]);
       const curvaV = r.vals[li];
+      const realV  = fatDiario[dia]||0;
+      acumReal  += realV;
+      acumCurva += curvaV;
+      const diff = realV - curvaV;
+      const diffCor = diff>=0?"#1a9e5c":"#c0392b";
       return `<tr>
-        <td style="padding:4px 8px;font-size:10px;color:#555">${dia}</td>
-        <td style="padding:4px 8px;font-size:10px;text-align:right;color:#888">${R(curvaV)}</td>
+        <td style="${td}color:#555">${r.data}</td>
+        <td style="${td}text-align:right;color:#888">${curvaV>0?R(curvaV):"—"}</td>
+        <td style="${td}text-align:right;font-weight:${realV>0?600:400};color:${realV>0?"#222":"#ccc"}">${realV>0?R(realV):"—"}</td>
+        <td style="${td}text-align:right;font-weight:600;color:${diffCor}">${realV>0?(diff>=0?"+":"")+R(diff):"—"}</td>
+        <td style="${td}text-align:right;color:#555">${R(acumReal)}</td>
       </tr>`;
     }).join("");
 
     return `
       <div class="rpt-section-title">📈 Curva de Venda — ${loja}</div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">
-        ${kpiCard("Faturado", R(fatReal), "#0077cc")}
-        ${kpiCard("Curva Esperada", R(espHoje), "#888")}
-        ${kpiCard("Desvio", (desvio>=0?"+":"")+R(desvio), dentro?"#1a9e5c":"#c0392b")}
-        ${kpiCard("% da Meta", pctMeta.toFixed(1)+"%", pctMeta>=90?"#1a9e5c":pctMeta>=70?"#b58800":"#c0392b")}
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px">
+        ${kpiCard("Faturado MTD",R(fatReal),"#0077cc")}
+        ${kpiCard("Curva até hoje",R(espHoje),"#888")}
+        ${kpiCard("Desvio",(desvio>=0?"+":"")+R(desvio),dentro?"#1a9e5c":"#c0392b")}
+        ${kpiCard("% da Meta",pctMeta.toFixed(1)+"%",pctMeta>=90?"#1a9e5c":pctMeta>=70?"#b58800":"#c0392b")}
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
-        <div style="${cardStyle()}">
-          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#888;margin-bottom:8px">Status da Curva</div>
-          <div style="font-size:14px;font-weight:800;color:${dentro?'#1a9e5c':'#c0392b'};margin-bottom:4px">${dentro ? "✓ Dentro da Curva" : "✗ Fora da Curva"}</div>
-          <div style="height:6px;background:#e2e6ea;border-radius:99px;overflow:hidden;margin:8px 0">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <div style="${cardStyle()}padding:8px 10px;">
+          <div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#888;margin-bottom:4px">Status</div>
+          <div style="font-size:13px;font-weight:800;color:${dentro?"#1a9e5c":"#c0392b"}">${dentro?"✓ Dentro da Curva":"✗ Fora da Curva"}</div>
+          <div style="height:4px;background:#e2e6ea;border-radius:99px;overflow:hidden;margin:6px 0">
             <div style="height:100%;width:${Math.min(pctMeta,100).toFixed(1)}%;background:${cor};border-radius:99px"></div>
           </div>
-          <div style="font-size:9px;color:#888">Meta: ${R(meta)} · Faltam: ${R(faltaMeta)}</div>
+          <div style="font-size:8px;color:#888">Meta: ${R(meta)} · Faltam: ${R(faltaMeta)}</div>
         </div>
-        <div style="${cardStyle()}">
-          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#888;margin-bottom:8px">Meta Diária Recalculada</div>
-          <div style="font-size:18px;font-weight:800;color:#b58800;margin-bottom:4px">${R(metaDia)}<span style="font-size:10px;color:#888">/dia</span></div>
-          <div style="font-size:9px;color:#888">${diasRest} dias úteis restantes</div>
+        <div style="${cardStyle()}padding:8px 10px;">
+          <div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#888;margin-bottom:4px">Meta/Dia Recalc.</div>
+          <div style="font-size:15px;font-weight:800;color:#b58800">${R(metaDia)}<span style="font-size:9px;color:#888">/dia</span></div>
+          <div style="font-size:8px;color:#888">${diasRest} dias úteis restantes</div>
         </div>
       </div>
-      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#888;margin-bottom:6px">Faturamento Diário (curva)</div>
-      <table style="width:100%;border-collapse:collapse">
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#888;margin-bottom:4px">Faturamento Diário — Curva vs Realizado</div>
+      <table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">
         <thead><tr>
-          <th style="padding:5px 8px;font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#888;border-bottom:2px solid #e2e6ea;background:#f8f9fa">Data</th>
-          <th style="padding:5px 8px;font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#888;border-bottom:2px solid #e2e6ea;background:#f8f9fa;text-align:right">Curva Esperada</th>
+          <th style="${th}">Data</th>
+          <th style="${th}text-align:right">Curva</th>
+          <th style="${th}text-align:right">Realizado</th>
+          <th style="${th}text-align:right">Diff</th>
+          <th style="${th}text-align:right">Acum. Real</th>
         </tr></thead>
         <tbody>${diasRows}</tbody>
       </table>`;
@@ -2480,10 +2500,10 @@ function gerarRelatorio() {
       const nV = d.vendas>0&&d.ticket>0?Math.round(d.vendas/d.ticket):0;
       const mv = getMetaDiariaVendedor(d.nome, d.loja);
       const pv = getProjecaoVendedor(d.nome);
-      return `<div style="${cardStyle()}border-left:3px solid ${in7030?cor:'#c0392b'};margin-bottom:10px">
-        <div style="font-size:10px;font-weight:700;margin-bottom:2px">${posLabel} ${sName(d.nome)}</div>
+      return `<div style="${cardStyle()}border-left:3px solid ${in7030?cor:'#c0392b'};margin-bottom:6px">
+        <div style="font-size:9px;font-weight:700;margin-bottom:1px">${posLabel} ${sName(d.nome)}</div>
         <div style="font-size:9px;color:${in7030?'#1a9e5c':'#c0392b'};margin-bottom:8px">${in7030?'✓ 70/30':'✗ 70/30'} · ${pctLider}% do líder</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:3px">
           ${miniStat("Vendas", R(d.vendas))}
           ${miniStat("PA", N(d.ppv||0))}
           ${miniStat("TM", R(d.ticket||0))}
@@ -2542,14 +2562,14 @@ function gerarRelatorio() {
       const cen  = cenLabel(varP===999?1:varP, varF===999?1:varF);
       const fmtPct = v => v===999?"🟢 Novo":(v>=0?"+":"")+v.toFixed(1)+"%";
       return `<tr>
-        <td style="padding:5px 8px;font-size:10px;font-weight:600">${cat}</td>
-        <td style="padding:5px 8px;font-size:10px;text-align:right;color:#888">${cB.qtde}</td>
-        <td style="padding:5px 8px;font-size:10px;text-align:right;font-weight:700">${cA.qtde}</td>
-        <td style="padding:5px 8px;font-size:10px;text-align:right;color:${varP>=0?'#1a9e5c':'#c0392b'};font-weight:600">${fmtPct(varP)}</td>
-        <td style="padding:5px 8px;font-size:10px;text-align:right;color:#888">${R(cB.valor)}</td>
-        <td style="padding:5px 8px;font-size:10px;text-align:right;font-weight:700">${R(cA.valor)}</td>
-        <td style="padding:5px 8px;font-size:10px;text-align:right;color:${varF>=0?'#1a9e5c':'#c0392b'};font-weight:600">${fmtPct(varF)}</td>
-        <td style="padding:5px 8px;font-size:10px;font-weight:700;color:${cen.color}">${cen.label}</td>
+        <td style="padding:3px 5px;font-size:9px;font-weight:600">${cat}</td>
+        <td style="padding:3px 5px;font-size:9px;text-align:right;color:#888">${cB.qtde}</td>
+        <td style="padding:3px 5px;font-size:9px;text-align:right;font-weight:700">${cA.qtde}</td>
+        <td style="padding:3px 5px;font-size:9px;text-align:right;color:${varP>=0?'#1a9e5c':'#c0392b'};font-weight:600">${fmtPct(varP)}</td>
+        <td style="padding:3px 5px;font-size:9px;text-align:right;color:#888">${R(cB.valor)}</td>
+        <td style="padding:3px 5px;font-size:9px;text-align:right;font-weight:700">${R(cA.valor)}</td>
+        <td style="padding:3px 5px;font-size:9px;text-align:right;color:${varF>=0?'#1a9e5c':'#c0392b'};font-weight:600">${fmtPct(varF)}</td>
+        <td style="padding:3px 5px;font-size:9px;font-weight:700;color:${cen.color}">${cen.label}</td>
       </tr>`;
     }).join("");
 
@@ -2645,14 +2665,14 @@ function gerarRelatorio() {
         const pctVend   = metaIndiv>0?(v.totalDezena/metaIndiv)*100:0;
         const in7030    = v.totalDezena >= thresh7030;
         html += `<tr style="border-bottom:1px solid #f0f0f0;background:${in7030?'#f9fffd':'#fff8f8'}">
-          <td style="padding:5px 8px;font-size:10px;font-weight:600">${sName(v.nome)}</td>
+          <td style="padding:3px 5px;font-size:9px;font-weight:600">${sName(v.nome)}</td>
           ${diasCols.map(d => {
             const val = v.diasMap[d]||0;
             return `<td style="padding:5px 8px;font-size:9px;text-align:right;color:${val>0?'#333':'#ccc'}">${val>0?"R$"+Math.round(val).toLocaleString("pt-BR"):"—"}</td>`;
           }).join("")}
-          <td style="padding:5px 8px;font-size:10px;text-align:right;font-weight:700;color:#0077cc">R$${Math.round(v.totalDezena).toLocaleString("pt-BR")}</td>
-          <td style="padding:5px 8px;font-size:10px;text-align:right;font-weight:600;color:${pctVend>=100?'#1a9e5c':pctVend>=70?'#b58800':'#c0392b'}">${pctVend.toFixed(0)}%</td>
-          <td style="padding:5px 8px;font-size:10px;text-align:center">${in7030?'<span style="color:#1a9e5c">✓</span>':'<span style="color:#c0392b">✗</span>'}</td>
+          <td style="padding:3px 5px;font-size:9px;text-align:right;font-weight:700;color:#0077cc">R$${Math.round(v.totalDezena).toLocaleString("pt-BR")}</td>
+          <td style="padding:3px 5px;font-size:9px;text-align:right;font-weight:600;color:${pctVend>=100?'#1a9e5c':pctVend>=70?'#b58800':'#c0392b'}">${pctVend.toFixed(0)}%</td>
+          <td style="padding:3px 5px;font-size:9px;text-align:center">${in7030?'<span style="color:#1a9e5c">✓</span>':'<span style="color:#c0392b">✗</span>'}</td>
         </tr>`;
       });
 
@@ -2660,8 +2680,8 @@ function gerarRelatorio() {
       html += `<tr style="border-top:2px solid #e2e6ea;background:#f8f9fa;font-weight:800">
         <td style="padding:5px 8px;font-size:10px">TOTAL</td>
         ${diasCols.map(d=>{const s=vendedoresDez.reduce((a,v)=>a+(v.diasMap[d]||0),0);return`<td style="padding:5px 8px;font-size:9px;text-align:right;color:${s>0?'#333':'#ccc'}">${s>0?"R$"+Math.round(s).toLocaleString("pt-BR"):"—"}</td>`;}).join("")}
-        <td style="padding:5px 8px;font-size:10px;text-align:right;color:#0077cc">R$${Math.round(totalDezLoja).toLocaleString("pt-BR")}</td>
-        <td style="padding:5px 8px;font-size:10px;text-align:right;color:${pctMeta>=100?'#1a9e5c':pctMeta>=70?'#b58800':'#c0392b'};font-weight:800">${pctMeta.toFixed(1)}%</td>
+        <td style="padding:3px 5px;font-size:9px;text-align:right;color:#0077cc">R$${Math.round(totalDezLoja).toLocaleString("pt-BR")}</td>
+        <td style="padding:3px 5px;font-size:9px;text-align:right;color:${pctMeta>=100?'#1a9e5c':pctMeta>=70?'#b58800':'#c0392b'};font-weight:800">${pctMeta.toFixed(1)}%</td>
         <td></td>
       </tr>`;
       html += `</tbody></table>`;
@@ -2706,9 +2726,9 @@ function gerarRelatorio() {
       const bold = l===loja?"font-weight:800;":"";
       const bg   = l===loja?"background:#fff8f0;":"";
       return `<tr style="${bg}border-bottom:1px solid #f0f0f0">
-        <td style="padding:5px 8px;font-size:10px;${bold}color:${LOJA_CORES_RPT[l]||'#888'}">${l}</td>
-        ${vals.map((v,i)=>`<td style="padding:5px 8px;font-size:10px;text-align:right;${bold}color:${CAT_COLORS[CATS[i]]}">${v>0?v:"—"}</td>`).join("")}
-        <td style="padding:5px 8px;font-size:10px;text-align:right;${bold}font-weight:700">${total}</td>
+        <td style="padding:3px 5px;font-size:9px;${bold}color:${LOJA_CORES_RPT[l]||'#888'}">${l}</td>
+        ${vals.map((v,i)=>`<td style="padding:3px 5px;font-size:9px;text-align:right;${bold}color:${CAT_COLORS[CATS[i]]}">${v>0?v:"—"}</td>`).join("")}
+        <td style="padding:3px 5px;font-size:9px;text-align:right;${bold}font-weight:700">${total}</td>
       </tr>`;
     }).join("");
 
@@ -2720,9 +2740,9 @@ function gerarRelatorio() {
       const vals = CATS.map(cat => vendsDaLoja[n][cat]||0);
       const total = vals.reduce((s,v)=>s+v,0);
       return `<tr style="border-bottom:1px solid #f0f0f0">
-        <td style="padding:5px 8px;font-size:10px;font-weight:600">${sName(n)}</td>
-        ${vals.map((v,i)=>`<td style="padding:5px 8px;font-size:10px;text-align:right;color:${CAT_COLORS[CATS[i]]}">${v>0?v:"—"}</td>`).join("")}
-        <td style="padding:5px 8px;font-size:10px;text-align:right;font-weight:700">${total}</td>
+        <td style="padding:3px 5px;font-size:9px;font-weight:600">${sName(n)}</td>
+        ${vals.map((v,i)=>`<td style="padding:3px 5px;font-size:9px;text-align:right;color:${CAT_COLORS[CATS[i]]}">${v>0?v:"—"}</td>`).join("")}
+        <td style="padding:3px 5px;font-size:9px;text-align:right;font-weight:700">${total}</td>
       </tr>`;
     }).join("");
 
@@ -2751,19 +2771,19 @@ function gerarRelatorio() {
 
   // ──── Helpers visuais ────
   function kpiCard(label, val, color) {
-    return `<div style="${cardStyle()}">
-      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#888;margin-bottom:4px">${label}</div>
-      <div style="font-size:15px;font-weight:800;color:${color};line-height:1.2">${val}</div>
+    return `<div style="background:#f8f9fa;border-radius:7px;padding:7px 9px;border:1px solid #e2e6ea;">
+      <div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#888;margin-bottom:2px">${label}</div>
+      <div style="font-size:13px;font-weight:800;color:${color};line-height:1.2">${val}</div>
     </div>`;
   }
   function miniStat(label, val, color) {
-    return `<div style="background:#f8f9fa;border-radius:6px;padding:5px 7px">
-      <div style="font-size:8px;text-transform:uppercase;letter-spacing:0.08em;color:#aaa">${label}</div>
-      <div style="font-size:10px;font-weight:700;color:${color||'#333'};margin-top:1px">${val}</div>
+    return `<div style="background:#f8f9fa;border-radius:5px;padding:3px 6px;border:1px solid #eee">
+      <div style="font-size:7px;text-transform:uppercase;letter-spacing:0.07em;color:#aaa">${label}</div>
+      <div style="font-size:9px;font-weight:700;color:${color||'#333'}">${val}</div>
     </div>`;
   }
   function cardStyle() {
-    return "background:#f8f9fa;border-radius:10px;padding:10px 12px;border:1px solid #e2e6ea;";
+    return "background:#f8f9fa;border-radius:7px;padding:7px 10px;border:1px solid #e2e6ea;";
   }
 
   // ──── Montar HTML do relatório ────
@@ -2780,17 +2800,19 @@ function gerarRelatorio() {
   .rpt-header{padding:20px 28px 16px;border-bottom:3px solid ${cor};margin-bottom:0;background:#fff;}
   .rpt-loja{font-size:24px;font-weight:900;color:${cor};letter-spacing:-0.04em;margin-bottom:2px;}
   .rpt-meta{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:0.1em;}
-  .rpt-body{padding:20px 28px;}
+  .rpt-body{padding:12px 18px;}
   .rpt-section-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.12em;color:#1a202c;margin:24px 0 12px;padding:8px 12px;background:${cor}18;border-left:3px solid ${cor};border-radius:0 6px 6px 0;}
   .rpt-section-title:first-child{margin-top:0;}
   @media print{
-    @page{margin:12mm 10mm;size:A4;}
-    body{font-size:9px;}
-    .rpt-header{padding:12px 16px 10px;}
-    .rpt-loja{font-size:18px;}
-    .rpt-body{padding:12px 16px;}
-    .rpt-section-title{font-size:9px;margin:16px 0 8px;}
+    @page{margin:10mm 8mm;size:A4;}
+    body{font-size:8px;}
+    .rpt-header{padding:8px 12px 6px;}
+    .rpt-loja{font-size:15px;}
+    .rpt-body{padding:8px 12px;}
+    .rpt-section-title{font-size:8px;margin:10px 0 5px;padding:5px 8px;}
     button,.no-print{display:none!important;}
+    table{page-break-inside:auto;}
+    tr{page-break-inside:avoid;}
   }
 </style>
 </head>
