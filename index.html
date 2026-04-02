@@ -655,6 +655,16 @@ const STORE_MAP = {
   "GERENTE IAN PIRES RAMOS (427)":                      "OTC TPJ",
 };
 
+  // Lookup por código numérico — imutável, evita confusão entre nomes parecidos
+const STORE_MAP_BY_CODE = (() => {
+  const m = {};
+  Object.entries(STORE_MAP).forEach(([nome, loja]) => {
+    const match = nome.match(/\((\d+)\)\s*$/);
+    if (match) m[match[1]] = loja;
+  });
+  return m;
+})();
+
 const RAW = [
   {nome:"KAMILLA VITORIA ROCHA DA SILVA (450)",                pecas:157, ppv:2.14, vendas:6146.59, ticket:941.84},
   {nome:"BEATRIZ RODRIGUES DOS SANTOS CORREA (432)",           pecas:94,  ppv:2.25, vendas:5168.92, ticket:1292.23},
@@ -1031,10 +1041,22 @@ function tryMap(rows, extraLojaMap) {
     vendas: parseFloat((r[fV] ||"0").replace(/[^\d,\.]/g,"").replace(",","."))||0,
     ticket: parseFloat((r[fTk]||"0").replace(/[^\d,\.]/g,"").replace(",","."))||0,
     ppv:    parseFloat((r[fPPV]||"0").replace(/[^\d,\.]/g,"").replace(",","."))||0,
-    loja:   lojaLookup[r[fNome]] || STORE_MAP[r[fNome]] ||
-            (() => { const upper = (r[fNome]||"").toUpperCase();
-              const k = Object.keys(STORE_MAP).find(k => k.toUpperCase() === upper);
-              return k ? STORE_MAP[k] : "—"; })(),
+  loja: (() => {
+  const nome = r[fNome] || "";
+  // 1. Match exato (lookup externo ou STORE_MAP)
+  if (lojaLookup[nome]) return lojaLookup[nome];
+  if (STORE_MAP[nome])  return STORE_MAP[nome];
+  // 2. Match por código numérico — único por vendedor no ERP
+  const codeMatch = nome.match(/\((\d+)\)\s*$/);
+  if (codeMatch && STORE_MAP_BY_CODE[codeMatch[1]]) return STORE_MAP_BY_CODE[codeMatch[1]];
+  // 3. Fallback: nome sem código, sem acento, sem espaço extra — case-insensitive
+  const norm = s => s.trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  const nomeSemCod = norm(nome.replace(/\s*\(\d+\)\s*$/,""));
+  const found = Object.entries(STORE_MAP).find(([k]) =>
+    norm(k.replace(/\s*\(\d+\)\s*$/,"")) === nomeSemCod
+  );
+  return found ? found[1] : "—";
+})(),
   })).filter(d => d.nome && d.vendas > 0 && !d.nome.toUpperCase().includes("LOJA VENDA"));
 }
 
