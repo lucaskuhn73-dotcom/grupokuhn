@@ -395,7 +395,7 @@
       </button>
       <button class="btn-tv" id="btn-tv" onclick="toggleTVMode()" title="Modo TV — rotação automática de abas">📺 Modo TV</button>
       <span class="badge-live" id="badge-live">Dados Carregados</span>
-      <span style="padding:0.35rem 0.75rem;border-radius:999px;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(167,139,250,0.1);color:var(--accent3);border:1px solid rgba(167,139,250,0.25);">V2.17</span>
+      <span style="padding:0.35rem 0.75rem;border-radius:999px;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(167,139,250,0.1);color:var(--accent3);border:1px solid rgba(167,139,250,0.25);">V2.18</span>
     </div>
   </header>
 
@@ -1113,10 +1113,11 @@ function loadFromSheets() {
         let lojaAtual = "";
         json.lojas.forEach(row => {
           const val = String(row[0]).trim(); if(!val) return;
-          if(!/\(\d+\)/.test(val) && (row.length===1||row[1]===""||row[1]===undefined)) lojaAtual=val;
-          else lojaMap[val]=lojaAtual;
+          if(!/\(\d+\)/.test(val) && (row.length===1||row[1]===""||row[1]===undefined)) { lojaAtual=val; }
+          else if(lojaAtual) { lojaMap[val]=lojaAtual; const cm=val.match(/\((\d+)\)\s*$/); if(cm) lojaMap[cm[1]]=lojaAtual; }
         });
       }
+      lojaMapDinamico = Object.assign({}, lojaMap);
       if(json.curva && json.curva.length > 1) {
         try {
           const novasCurvas = [];
@@ -1177,10 +1178,11 @@ function loadFromSheets() {
               let lojaAtual = "";
               json.lojas.forEach(row => {
                 const val = String(row[0]).trim(); if(!val) return;
-                if(!/\(\d+\)/.test(val)&&(row.length===1||row[1]===""||row[1]===undefined)) lojaAtual=val;
-                else lojaMap[val]=lojaAtual;
+                if(!/\(\d+\)/.test(val)&&(row.length===1||row[1]===""||row[1]===undefined)) { lojaAtual=val; }
+                else if(lojaAtual) { lojaMap[val]=lojaAtual; const cm=val.match(/\((\d+)\)\s*$/); if(cm) lojaMap[cm[1]]=lojaAtual; }
               });
             }
+            lojaMapDinamico = Object.assign({}, lojaMap);
             if(json.baseAtual)    baseAtualData    = json.baseAtual;
             if(json.baseAnterior) baseAnteriorData = json.baseAnterior;
             if(json.curvaVend)    curvaVendData    = json.curvaVend;
@@ -1455,6 +1457,10 @@ let baseAnteriorData = [];
 let curvaVendData    = [];
 let faturamentoData  = [];
 let termometrosData  = {};
+
+// Mapa dinâmico vendedor→loja vindo do json.lojas do Sheets
+// Fonte de verdade para parseFaturamento e lojaDoVendedor
+let lojaMapDinamico = {};
 
 const BASE_LOJA_MAP = {"1":"ATM","16":"PBA LJR","17":"OTC PBA","18":"TAPAJÓS","19":"PBA SHOP","20":"PARAÍSO","21":"OTC TPJ"};
 
@@ -1943,10 +1949,17 @@ function parseFaturamento(rows) {
     if(colAStr.toUpperCase().startsWith("LOJA VENDA")){ vendedorAtual=null; return; }
     vendedorAtual = colAStr;
     if(!result[vendedorAtual]) {
-      const loja = STORE_MAP[vendedorAtual] || (()=>{
-        const upper = vendedorAtual.toUpperCase();
-        const k = Object.keys(STORE_MAP).find(k=>k.toUpperCase()===upper);
-        return k?STORE_MAP[k]:"—";
+      const loja = (() => {
+        const n = vendedorAtual;
+        if(STORE_MAP[n]) return STORE_MAP[n];
+        if(lojaMapDinamico[n]) return lojaMapDinamico[n];
+        const cm = n.match(/\((\d+)\)\s*$/);
+        if(cm) { if(STORE_MAP_BY_CODE[cm[1]]) return STORE_MAP_BY_CODE[cm[1]]; if(lojaMapDinamico[cm[1]]) return lojaMapDinamico[cm[1]]; }
+        const normS = s => s.trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+        const base = normS(n.replace(/\s*\(\d+\)\s*$/,''));
+        const all = {...STORE_MAP, ...lojaMapDinamico};
+        const k = Object.keys(all).find(k => normS(k.replace(/\s*\(\d+\)\s*$/,'')) === base);
+        return k ? all[k] : '—';
       })();
       result[vendedorAtual] = { loja, diasMap:{} };
     }
@@ -2083,13 +2096,21 @@ function setTermGrupo(g, btn) {
 }
 function lojaDoVendedor(nomeCompleto) {
   if(!nomeCompleto) return null;
+  // 1. Match exato
   if(STORE_MAP[nomeCompleto]) return STORE_MAP[nomeCompleto];
-  const upper = nomeCompleto.toUpperCase();
-  const k = Object.keys(STORE_MAP).find(k => k.toUpperCase() === upper);
-  if(k) return STORE_MAP[k];
-  const nomeSemCod = nomeCompleto.replace(/\s*\(\d+\)\s*$/,"").trim().toUpperCase();
-  const k2 = Object.keys(STORE_MAP).find(k => k.replace(/\s*\(\d+\)\s*$/,"").trim().toUpperCase() === nomeSemCod);
-  return k2 ? STORE_MAP[k2] : null;
+  if(lojaMapDinamico[nomeCompleto]) return lojaMapDinamico[nomeCompleto];
+  // 2. Código numérico — ID único do ERP
+  const cm = nomeCompleto.match(/\((\d+)\)\s*$/);
+  if(cm) {
+    if(STORE_MAP_BY_CODE[cm[1]]) return STORE_MAP_BY_CODE[cm[1]];
+    if(lojaMapDinamico[cm[1]])   return lojaMapDinamico[cm[1]];
+  }
+  // 3. Fallback sem código, sem acento, case-insensitive
+  const normS = s => s.trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const base = normS(nomeCompleto.replace(/\s*\(\d+\)\s*$/,''));
+  const all = {...STORE_MAP, ...lojaMapDinamico};
+  const k = Object.keys(all).find(k => normS(k.replace(/\s*\(\d+\)\s*$/,'')) === base);
+  return k ? all[k] : null;
 }
 function lojaNoGrupoTerm(loja) {
   if(termGrupoAtivo === "TODAS") return true;
@@ -2233,10 +2254,11 @@ renderTermometro();
           let lojaAtual = "";
           json.lojas.forEach(row => {
             const val = String(row[0]).trim(); if(!val) return;
-            if(!/\(\d+\)/.test(val)&&(row.length===1||row[1]===""||row[1]===undefined)) lojaAtual=val;
-            else lojaMap[val]=lojaAtual;
+            if(!/\(\d+\)/.test(val)&&(row.length===1||row[1]===""||row[1]===undefined)) { lojaAtual=val; }
+            else if(lojaAtual) { lojaMap[val]=lojaAtual; const cm=val.match(/\((\d+)\)\s*$/); if(cm) lojaMap[cm[1]]=lojaAtual; }
           });
         }
+        lojaMapDinamico = Object.assign({}, lojaMap);
         if(json.baseAtual)    baseAtualData    = json.baseAtual;
         if(json.baseAnterior) baseAnteriorData = json.baseAnterior;
         if(json.curvaVend)    curvaVendData    = json.curvaVend;
