@@ -395,7 +395,7 @@
       </button>
       <button class="btn-tv" id="btn-tv" onclick="toggleTVMode()" title="Modo TV — rotação automática de abas">📺 Modo TV</button>
       <span class="badge-live" id="badge-live">Dados Carregados</span>
-      <span style="padding:0.35rem 0.75rem;border-radius:999px;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(167,139,250,0.1);color:var(--accent3);border:1px solid rgba(167,139,250,0.25);">V3.3</span>
+      <span style="padding:0.35rem 0.75rem;border-radius:999px;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(167,139,250,0.1);color:var(--accent3);border:1px solid rgba(167,139,250,0.25);">V3.4</span>
     </div>
   </header>
 
@@ -1759,7 +1759,7 @@ function renderResumoDezenaEmResumo(dezenaAtiva) {
     const metaDezLoja  = getMetaDezena(lojaIdx>=0?lojaIdx:0, dezenaAtiva);
     const pctMeta      = metaDezLoja>0 ? (totalDezLoja/metaDezLoja)*100 : 0;
     const mdDezLoja    = getMetaDiaDezena(lojaIdx>=0?lojaIdx:0, dezenaAtiva, totalDezLoja);
-    const r7030        = calc7030(vendedores.map(v => ({vendas: v.totalDezena, nome: v.nome})));
+    const r7030        = calc7030(vendedores.filter(v=>v.nome).map(v => ({vendas: v.totalDezena, nome: v.nome})));
 
     html += `<div class="resumo-loja-card" style="border-color:${corBd}33;margin-bottom:1.5rem">
       <div class="resumo-loja-header">
@@ -1781,23 +1781,38 @@ function renderResumoDezenaEmResumo(dezenaAtiva) {
       const mvIndiv  = getMetaDiariaVendedor(v.nome, loja);
       const metaIndivDez = mvIndiv
         ? mvIndiv.meta * (metaDezLoja / (META_MENSAL[lojaIdx>=0?lojaIdx:0]||1))
-        : metaDezLoja / Math.max(vendedores.length, 1);
+        : metaDezLoja / Math.max(vendedores.filter(x=>!isGerente(x.nome||"")).length, 1);
       const pctVend  = metaIndivDez>0 ? (v.totalDezena/metaIndivDez)*100 : 0;
       const mvDez    = getMetaDiaDezenaVendedor(v.nome, loja, v.totalDezena);
       const metaDiaD = mvDez ? mvDez.metaDia : null;
       const cor2     = pctVend>=100?"var(--pos-color)":pctVend>=70?"var(--accent4)":"var(--neg-color)";
+      // Indicadores do mês para PA, TM, Nº Vendas, Peças
+      const vendMes  = allData.find(d => d.nome === v.nome);
+      const nVendas  = vendMes && vendMes.vendas>0 && vendMes.ticket>0 ? Math.round(vendMes.vendas/vendMes.ticket) : 0;
+      // Projeção da dezena
+      const pv = getProjecaoVendedor(v.nome);
 
-      html += `<div class="resumo-vend-card" style="border-color:${in7030?corBd+'33':'var(--neg-color)33'}">
-        <div class="resumo-vend-pos" style="${posC}">${i===0?"🥇":i===1?"🥈":i===2?"🥉":"#"+(i+1)} ${in7030?'<span class="badge-7030-ok">✓ 70/30</span>':'<span class="badge-7030-nok">✗ 70/30</span>'}</div>
-        <div class="resumo-vend-name" title="${v.nome||''}">${v.nome ? shortName(v.nome) : '—'}</div>
-        <div class="resumo-stat-row"><span class="resumo-stat-label">Total Dez.</span><span class="resumo-stat-val" style="color:var(--accent)">${fmtR(v.totalDezena)}</span></div>
-        <div class="resumo-stat-row"><span class="resumo-stat-label">% do líder</span><span class="resumo-stat-val" style="color:${in7030?'var(--pos-color)':'var(--neg-color)'}">${pctLider}%</span></div>
-        <div class="resumo-stat-row"><span class="resumo-stat-label">% Meta Dez.</span><span class="resumo-stat-val" style="color:${cor2}">${pctVend.toFixed(0)}%</span></div>
-        ${metaDiaD !== null ? `<div class="resumo-stat-row" style="margin-top:0.4rem;padding-top:0.4rem;border-top:1px solid var(--border)">
+      html += \`<div class="resumo-vend-card" style="border-color:\${in7030?corBd+'33':'var(--neg-color)33'}">
+        <div class="resumo-vend-pos" style="\${posC}">\${i===0?"🥇":i===1?"🥈":i===2?"🥉":"#"+(i+1)} \${in7030?'<span class="badge-7030-ok">✓ 70/30</span>':'<span class="badge-7030-nok">✗ 70/30</span>'}</div>
+        <div class="resumo-vend-name" title="\${v.nome||''}">\${v.nome ? shortName(v.nome) : '—'}</div>
+        <div class="resumo-stat-row"><span class="resumo-stat-label">Total Dez.</span><span class="resumo-stat-val" style="color:var(--accent)">\${fmtR(v.totalDezena)}</span></div>
+        <div class="resumo-stat-row"><span class="resumo-stat-label">% do líder</span><span class="resumo-stat-val" style="color:\${in7030?'var(--pos-color)':'var(--neg-color)'}">\${pctLider}%</span></div>
+        <div class="resumo-stat-row"><span class="resumo-stat-label">% Meta Dez.</span><span class="resumo-stat-val" style="color:\${cor2}">\${pctVend.toFixed(0)}%</span></div>
+        \${vendMes ? \`
+        <div class="resumo-stat-row"><span class="resumo-stat-label">PA</span><span class="resumo-stat-val">\${fmtN(vendMes.ppv||0)}</span></div>
+        <div class="resumo-stat-row"><span class="resumo-stat-label">TM</span><span class="resumo-stat-val">\${fmtR(vendMes.ticket||0)}</span></div>
+        <div class="resumo-stat-row"><span class="resumo-stat-label">Nº Vendas</span><span class="resumo-stat-val">\${nVendas}</span></div>
+        <div class="resumo-stat-row"><span class="resumo-stat-label">Peças</span><span class="resumo-stat-val">\${vendMes.pecas||0}</span></div>
+        \` : ''}
+        \${metaDiaD !== null ? \`<div class="resumo-stat-row" style="margin-top:0.4rem;padding-top:0.4rem;border-top:1px solid var(--border)">
           <span class="resumo-stat-label">Meta/dia <span style="font-size:0.6rem;opacity:0.7">(D)</span></span>
-          <span class="resumo-stat-val" style="color:var(--accent4)">${fmtR(Math.max(0, metaDiaD))}</span>
-        </div>` : ''}
-      </div>`;
+          <span class="resumo-stat-val" style="color:var(--accent4)">\${fmtR(Math.max(0, metaDiaD))}</span>
+        </div>\` : ''}
+        \${pv ? \`<div class="resumo-stat-row" style="margin-top:0.4rem;padding-top:0.4rem;border-top:1px solid var(--border)">
+          <span class="resumo-stat-label">📈 Proj. Dez.</span>
+          <span class="resumo-stat-val" style="color:var(--accent3)">\${fmtR(pv.projecaoDezena)}</span>
+        </div>\` : ''}
+      </div>\`;
     });
 
     html += `</div></div>`;
