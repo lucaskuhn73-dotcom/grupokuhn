@@ -2011,6 +2011,85 @@ function getMetaDezena(lojaIdx, dezena) {
   return meta * (somaDezena / somaTotal);
 }
 
+// Retorna meta/dia recalculada pela curva DENTRO da dezena
+// desvio = realizado até ontem vs curva esperada até ontem (dentro da dezena)
+// meta hoje = curva hoje - (desvio × peso de hoje dentro da dezena)
+function getMetaDiaDezena(lojaIdx, dezenaAtiva, realizadoDezena) {
+  if(lojaIdx < 0 || lojaIdx >= LOJAS_CURVA.length) return null;
+  if(CURVA_RAW.length === 0) return null;
+  const {min, max} = diasDaDezena(dezenaAtiva);
+  const hojeD = new Date().getDate();
+  const mesHoje = new Date().getMonth() + 1;
+  // Só aplica se estamos dentro da dezena atual
+  const mesCurva = CURVA_RAW.length > 0 ? parseInt(CURVA_RAW[0].data.split("/")[1]) : mesHoje;
+  if(mesCurva !== mesHoje) return null;
+  let curvaAteOntem = 0, curvaHoje = 0, curvaAposHoje = 0;
+  CURVA_RAW.forEach(r => {
+    const partes = r.data.split("/");
+    const dia = parseInt(partes[0]);
+    const mes = parseInt(partes[1]);
+    if(mes !== mesHoje) return;
+    if(dia < min || dia > max) return;
+    const val = r.vals[lojaIdx] || 0;
+    if(dia < hojeD)   curvaAteOntem  += val;
+    if(dia === hojeD) curvaHoje       = val;
+    if(dia > hojeD)   curvaAposHoje  += val;
+  });
+  if(curvaHoje <= 0) return null;
+  const desvio = realizadoDezena - curvaAteOntem;
+  const curvaRestComHoje = curvaHoje + curvaAposHoje;
+  const pesoHoje = curvaRestComHoje > 0 ? curvaHoje / curvaRestComHoje : 0;
+  const metaDia = curvaHoje - desvio * pesoHoje;
+  return { metaDia, curvaHoje, desvio, curvaAteOntem };
+}
+
+// Retorna meta/dia recalculada pela curva de vendedores DENTRO da dezena
+function getMetaDiaDezenaVendedor(nomeVendedor, loja, realizadoDezena) {
+  if(!curvaVendData || curvaVendData.length < 3) return null;
+  const gerente = /^GERENTE\s/i.test(nomeVendedor.trim());
+  const cargo   = gerente ? "GERENTE" : "VENDEDOR";
+  const rowLojas  = curvaVendData[0].map(h => String(h||"").trim().toUpperCase());
+  const rowCargos = curvaVendData[1].map(h => String(h||"").trim().toUpperCase());
+  const LOJA_NORM = {"ATM":"ALTAMIRA","PBA LJR":"PBA LJR","PBA SHOP":"PBA SHOP","PARAÍSO":"PARAISO","TAPAJÓS":"TAPAJOS","OTC PBA":"OTC PBA","OTC TPJ":"OTC TPJ"};
+  const lojaNorm  = LOJA_NORM[loja] || loja.toUpperCase();
+  const colIdx = rowLojas.findIndex((l,i) => (l===lojaNorm||l.includes(lojaNorm)) && rowCargos[i]===cargo);
+  if(colIdx < 0) return null;
+  function parseVendVal(v) {
+    if(!v || String(v).trim()==="-" || String(v).trim()==="R$  -") return 0;
+    const raw = String(v).replace(/[R$\s]/g,"").replace(/\.(?=\d{3})/g,"").replace(",",".");
+    const n = parseFloat(raw); return isNaN(n) ? 0 : n;
+  }
+  function getDiaMes(cell) {
+    const s = String(cell||"").trim();
+    const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if(iso) return { dia: parseInt(iso[3]), mes: parseInt(iso[2]) };
+    const sl = s.match(/^(\d{1,2})\/(\d{1,2})/);
+    if(sl) return { dia: parseInt(sl[1]), mes: parseInt(sl[2]) };
+    return null;
+  }
+  const hojeD = new Date().getDate();
+  const mesHoje = new Date().getMonth() + 1;
+  const {min, max} = diasDaDezena(hojeD<=10?1:hojeD<=20?2:3);
+  let curvaAteOntem = 0, curvaHoje = 0, curvaAposHoje = 0;
+  curvaVendData.slice(2).forEach(row => {
+    const dataCell = String(row[0]||"").trim();
+    if(!dataCell || dataCell.toLowerCase().includes("meta")) return;
+    const dm = getDiaMes(dataCell);
+    if(!dm || dm.mes !== mesHoje) return;
+    if(dm.dia < min || dm.dia > max) return;
+    const val = parseVendVal(row[colIdx]);
+    if(dm.dia < hojeD)   curvaAteOntem  += val;
+    if(dm.dia === hojeD) curvaHoje       = val;
+    if(dm.dia > hojeD)   curvaAposHoje  += val;
+  });
+  if(curvaHoje <= 0) return null;
+  const desvio = realizadoDezena - curvaAteOntem;
+  const curvaRestComHoje = curvaHoje + curvaAposHoje;
+  const pesoHoje = curvaRestComHoje > 0 ? curvaHoje / curvaRestComHoje : 0;
+  const metaDia = curvaHoje - desvio * pesoHoje;
+  return { metaDia, curvaHoje, desvio };
+}
+
 function extraiDia(v) {
   if(!v && v !== 0) return null;
   const s = String(v);
@@ -2101,6 +2180,8 @@ function renderDezena() {
     const metaDezLoja  = getMetaDezena(lojaIdx>=0?lojaIdx:0, dezenaAtiva);
     const totalDezLoja = vendedores.reduce((s,v)=>s+v.totalDezena,0);
     const pctMeta      = metaDezLoja>0?(totalDezLoja/metaDezLoja)*100:0;
+    // Meta/dia da loja recalculada pela curva dentro da dezena
+    const mdDezLoja    = getMetaDiaDezena(lojaIdx>=0?lojaIdx:0, dezenaAtiva, totalDezLoja);
     const vendsMes = allData.filter(d=>d.loja===loja);
     const avgPA = vendsMes.filter(d=>d.ppv>0).reduce((s,d)=>s+d.ppv,0)/(vendsMes.filter(d=>d.ppv>0).length||1);
     const avgTM = vendsMes.filter(d=>d.ticket>0).reduce((s,d)=>s+d.ticket,0)/(vendsMes.filter(d=>d.ticket>0).length||1);
@@ -2123,6 +2204,7 @@ function renderDezena() {
           <div class="resumo-loja-stat"><label>PA Mês</label><span>${fmtN(avgPA)}</span></div>
           <div class="resumo-loja-stat"><label>TM Mês</label><span>${fmtV(avgTM)}</span></div>
           <div class="resumo-loja-stat"><label>70/30</label><span>${emoji7030(r7030.pct)} ${r7030.pct.toFixed(0)}%</span></div>
+          ${mdDezLoja ? `<div class="resumo-loja-stat"><label>Meta/Dia Dez.</label><span style="color:var(--accent4);font-weight:700">${fmtV(mdDezLoja.metaDia)}</span></div>` : ''}
         </div>
       </div>
       <div style="overflow-x:auto;margin-top:1rem">
@@ -2148,8 +2230,9 @@ function renderDezena() {
         ? mvIndiv.meta * (getMetaDezena(lojaIdx>=0?lojaIdx:0, dezenaAtiva) / (META_MENSAL[lojaIdx>=0?lojaIdx:0]||1))
         : metaDezLoja / Math.max(vendedores.filter(x=>/^GERENTE\s/i.test(x.nome)===gerente).length,1);
       const pctVend    = metaIndivDez>0?(v.totalDezena/metaIndivDez)*100:0;
-      // Meta/dia recalculada: usa lógica ponderada pela curva de vendedores
-      const metaDiaRec = mvIndiv ? Math.max(0, mvIndiv.metaDia) : (diasRestantesDez>0 ? Math.max(0, metaIndivDez - v.totalDezena)/diasRestantesDez : 0);
+      // Meta/dia recalculada pela curva DENTRO da dezena
+      const mvDez = getMetaDiaDezenaVendedor(v.nome, loja, v.totalDezena);
+      const metaDiaRec = mvDez ? mvDez.metaDia : (diasRestantesDez>0 ? Math.max(0, metaIndivDez - v.totalDezena)/diasRestantesDez : 0);
       const in7030     = r7030.lider>0 && v.totalDezena>=r7030.threshold;
       const bg7030     = in7030 ? "rgba(52,211,153,0.05)" : "rgba(248,113,113,0.04)";
       html += `<tr style="background:${bg7030}">
