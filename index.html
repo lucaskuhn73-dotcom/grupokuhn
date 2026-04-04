@@ -395,7 +395,7 @@
       </button>
       <button class="btn-tv" id="btn-tv" onclick="toggleTVMode()" title="Modo TV — rotação automática de abas">📺 Modo TV</button>
       <span class="badge-live" id="badge-live">Dados Carregados</span>
-      <span style="padding:0.35rem 0.75rem;border-radius:999px;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(167,139,250,0.1);color:var(--accent3);border:1px solid rgba(167,139,250,0.25);">V2.18</span>
+      <span style="padding:0.35rem 0.75rem;border-radius:999px;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(167,139,250,0.1);color:var(--accent3);border:1px solid rgba(167,139,250,0.25);">V3</span>
     </div>
   </header>
 
@@ -1756,7 +1756,7 @@ function renderResumo() {
           if(!mv) return "";
           const cor2 = mv.pctMeta >= 90 ? "var(--pos-color)" : mv.pctMeta >= 70 ? "var(--accent4)" : "var(--neg-color)";
           return `<div class="resumo-stat-row" style="margin-top:0.4rem;padding-top:0.4rem;border-top:1px solid var(--border)">
-            <span class="resumo-stat-label">Meta/dia</span>
+            <span class="resumo-stat-label">Meta/dia <span style="font-size:0.6rem;opacity:0.7">(M)</span></span>
             <span class="resumo-stat-val" style="color:${cor2}">${fmtR(Math.max(0,mv.metaDia))}</span>
           </div>
           <div class="resumo-stat-row">
@@ -2215,7 +2215,7 @@ function renderDezena() {
             <th style="text-align:right;min-width:78px">Total</th>
             <th style="text-align:right;min-width:60px">% Meta</th>
             <th style="text-align:right;min-width:78px">Acum.</th>
-            <th style="text-align:right;min-width:78px">Meta/Dia</th>
+            <th style="text-align:right;min-width:78px">Meta/Dia (D)</th>
             <th style="text-align:right;min-width:84px;color:var(--accent3)">Proj. Dez.</th>
             <th style="text-align:center;min-width:52px">70/30</th>
           </tr></thead>
@@ -2244,7 +2244,7 @@ function renderDezena() {
         <td style="text-align:right;font-weight:700;color:var(--accent);font-size:0.72rem">${fmtV(v.totalDezena)}</td>
         <td style="text-align:right;color:${pctVend>=100?'var(--pos-color)':pctVend>=70?'var(--accent4)':'var(--neg-color)'};font-weight:600;font-size:0.72rem">${pctVend.toFixed(0)}%</td>
         <td style="text-align:right;color:var(--accent3);font-size:0.72rem">${fmtV(acumMes)}</td>
-        <td style="text-align:right;color:${metaDiaRec>0?'var(--accent4)':'var(--pos-color)'};font-weight:600;font-size:0.72rem">${metaDiaRec>0?fmtV(metaDiaRec):'✓ Meta'}</td>
+        <td style="text-align:right;color:${metaDiaRec>0?'var(--accent4)':'var(--pos-color)'};font-weight:600;font-size:0.72rem">${metaDiaRec>0?fmtV(metaDiaRec)+'<span style=\'font-size:0.55rem;opacity:0.6\' > (D)</span>':'✓ Meta'}</td>
         <td style="text-align:right;color:var(--accent3);font-size:0.72rem;font-weight:600;">${(() => { const pv=getProjecaoVendedor(v.nome); return pv?fmtV(pv.projecaoDezena):'—'; })()}</td>
         <td style="text-align:center;font-size:0.9rem">${in7030?'<span style="color:var(--pos-color)">✓</span>':'<span style="color:var(--neg-color)">✗</span>'}</td>
       </tr>`;
@@ -2255,7 +2255,8 @@ function renderDezena() {
       <td style="text-align:right;font-weight:800;color:var(--accent)">${fmtV(totalDezLoja)}</td>
       <td style="text-align:right;font-weight:800;color:${pctMeta>=100?'var(--pos-color)':pctMeta>=70?'var(--accent4)':'var(--neg-color)'}">${pctMeta.toFixed(1)}%</td>
       <td style="text-align:right;color:var(--accent3);font-weight:700">${fmtV(vendsMes.reduce((s,d)=>s+d.vendas,0))}</td>
-      <td colspan="2"></td>
+      <td style="text-align:right;font-weight:800;color:var(--accent4)">${mdDezLoja ? fmtV(mdDezLoja.metaDia)+'<span style=\'font-size:0.55rem;opacity:0.6\' > (D)</span>' : '—'}</td>
+      <td></td>
       <td style="text-align:right;color:var(--accent3);font-weight:700;">${(() => { const pj=getProjecaoLoja(loja); return pj?fmtV(pj.projecaoDezena):'—'; })()}</td>
       <td></td>
     </tr>`;
