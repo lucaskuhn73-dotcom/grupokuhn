@@ -1322,9 +1322,23 @@ function renderCurva() {
     const dentro    = desvioL >= 0;
     const faltaMeta = meta - realizado;
     const diasRest  = diasRestantes[li];
-    const metaDiaRecalc = diasRest > 0 ? faltaMeta / diasRest : 0;
-    const metaDiaCurva  = diasRest > 0 ? curvaRestante[li] / diasRest : 0;
-    const diffDia       = metaDiaRecalc - metaDiaCurva;
+
+    // Meta do dia recalculada com base na curva:
+    // curvaHoje = valor da curva no dia de hoje (HOJE_IDX)
+    // déficit = realizado - curva esperada até hoje (negativo = devendo)
+    // peso de hoje = curvaHoje / curvaRestante (inclui hoje)
+    // metaDiaRecalc = curvaHoje + (déficit negativo distribuído pelo peso de hoje)
+    const curvaHoje        = CURVA_RAW[HOJE_IDX] ? CURVA_RAW[HOJE_IDX].vals[li] : 0;
+    const curvaRestComHoje = curvaHoje + curvaRestante[li];
+    const pesoHoje         = curvaRestComHoje > 0 ? curvaHoje / curvaRestComHoje : 0;
+    // metaDiaFinal = curva de hoje + (desvio acumulado × peso de hoje na curva restante)
+    const metaDiaFinal     = curvaHoje + desvioL * pesoHoje;
+
+    // Projeção: fator de ritmo acumulado × meta mensal
+    const fator       = esperado > 0 ? realizado / esperado : 0;
+    const projecao    = fator * meta;
+    const projecaoDif = projecao - meta;
+
     const cor   = sc(loja).tx;
     const corBd = sc(loja).bd;
     return `<div class="curva-card" style="border-color:${corBd}33">
@@ -1340,28 +1354,45 @@ function renderCurva() {
       <div class="curva-meta" style="margin-top:0.6rem">Progresso meta mensal (${fmtR(meta)})</div>
       <div class="curva-progress"><div class="curva-progress-fill" style="width:${pctMeta}%;background:${cor}"></div></div>
       <div class="curva-stats"><span>${pctMeta.toFixed(1)}% da meta</span><span style="color:var(--muted)">Faltam ${fmtR(faltaMeta)}</span></div>
-      <div class="curva-recalc">Meta/dia recalculada: <span>${fmtR(metaDiaRecalc)}</span>
-        ${!dentro?`<span style="color:var(--neg-color);font-size:0.6rem"> (+${fmtR(diffDia)} vs curva)</span>`:`<span style="color:var(--pos-color);font-size:0.6rem"> (dentro da curva)</span>`}
+      <div class="curva-recalc">Meta/dia recalculada: <span>${fmtR(metaDiaFinal)}</span>
+        <span style="color:var(--muted);font-size:0.6rem"> (curva: ${fmtR(curvaHoje)})</span>
+      </div>
+      <div class="curva-recalc" style="margin-top:0.3rem">Projeção do mês: <span style="color:${projecaoDif>=0?'var(--pos-color)':'var(--neg-color)'}">${fmtR(projecao)}</span>
+        <span style="color:${projecaoDif>=0?'var(--pos-color)':'var(--neg-color)'};font-size:0.6rem"> (${projecaoDif>=0?'+':''}${fmtR(projecaoDif)} vs meta)</span>
       </div>
     </div>`;
   }).join("");
 
   const tbody = document.getElementById("tbody-meta-recalc");
+  // Adiciona coluna Projeção Mês no cabeçalho se ainda não existe
+  const thead = document.querySelector("#table-meta-recalc thead tr");
+  if(thead && thead.children.length < 6) {
+    const th = document.createElement("th");
+    th.textContent = "Projeção Mês";
+    thead.appendChild(th);
+  }
   tbody.innerHTML = lojaIdxs.map(li => {
     const loja      = CURVA_TO_LOJA[li];
     const realizado = fatReal[loja] || 0;
     const meta      = META_MENSAL[li];
     const desvioL   = realizado - espHoje[li];
-    const faltaMeta = meta - realizado;
-    const diasRest  = diasRestantes[li];
-    const metaDia   = diasRest > 0 ? faltaMeta/diasRest : 0;
     const dentro    = desvioL >= 0;
+    // Meta do dia recalculada pela curva ponderada
+    const curvaHoje        = CURVA_RAW[HOJE_IDX] ? CURVA_RAW[HOJE_IDX].vals[li] : 0;
+    const curvaRestComHoje = curvaHoje + curvaRestante[li];
+    const pesoHoje         = curvaRestComHoje > 0 ? curvaHoje / curvaRestComHoje : 0;
+    const metaDiaFinal     = curvaHoje + desvioL * pesoHoje;
+    // Projeção: fator acumulado × meta mensal
+    const fator    = espHoje[li] > 0 ? realizado / espHoje[li] : 0;
+    const projecao = fator * meta;
+    const projDif  = projecao - meta;
     return `<tr>
       <td><span class="store-tag ${sc(loja).cls}">${loja}</span></td>
       <td style="font-size:0.68rem;color:var(--muted)">${fmtR(meta)}</td>
       <td style="font-size:0.68rem;color:var(--text)">${fmtR(realizado)}</td>
       <td style="font-size:0.68rem;color:${dentro?'var(--pos-color)':'var(--neg-color)'}">${dentro?'+':''}${fmtR(desvioL)}</td>
-      <td class="val-cell" style="color:${dentro?'var(--accent)':'var(--accent4)'}">${fmtR(metaDia)}<span style="font-size:0.58rem;color:var(--muted)">/dia</span></td>
+      <td class="val-cell" style="color:${dentro?'var(--accent)':'var(--accent4)'}">${fmtR(metaDiaFinal)}<span style="font-size:0.58rem;color:var(--muted)">/dia</span></td>
+      <td style="font-size:0.68rem;font-weight:600;color:${projDif>=0?'var(--pos-color)':'var(--neg-color)'}">${fmtR(projecao)}<span style="font-size:0.58rem;color:var(--muted)"> (${projDif>=0?'+':''}${fmtR(projDif)})</span></td>
     </tr>`;
   }).join("");
 
@@ -1419,12 +1450,17 @@ function renderCurvaChart() {
       return +(totalReal * (r.vals[li] / curvaSomada)).toFixed(2);
     });
   }
-  const diasRestObj = CURVA_RAW.slice(HOJE_IDX+1).filter(r=>r.vals[li]>0).length;
-  const faltaMeta   = META_MENSAL[li] - totalReal;
-  const metaDiaRec  = diasRestObj > 0 ? faltaMeta/diasRestObj : 0;
+  const espHojeChart    = CURVA_RAW.slice(0, HOJE_IDX+1).reduce((s,r) => s + r.vals[li], 0);
+  const desvioChart     = totalReal - espHojeChart;
+  const curvaRestChart  = CURVA_RAW.slice(HOJE_IDX+1).reduce((s,r) => s + r.vals[li], 0);
+  // Projeção: fator acumulado × meta mensal
+  const fatorChart  = espHojeChart > 0 ? totalReal / espHojeChart : 1;
+  // Meta/dia recalculada pela curva ponderada para cada dia futuro
   const recalcVals  = CURVA_RAW.map((r, di) => {
     if(di <= HOJE_IDX || r.vals[li] === 0) return null;
-    return +metaDiaRec.toFixed(2);
+    const curvaRestComEste = CURVA_RAW.slice(di).reduce((s,rr) => s + rr.vals[li], 0);
+    const pesoEste = curvaRestComEste > 0 ? r.vals[li] / curvaRestComEste : 0;
+    return +(r.vals[li] + desvioChart * pesoEste).toFixed(2);
   });
   const cor = sc(loja).bd;
   const isDarkMode = !document.documentElement.classList.contains("light");
