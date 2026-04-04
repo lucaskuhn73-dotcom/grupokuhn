@@ -395,7 +395,7 @@
       </button>
       <button class="btn-tv" id="btn-tv" onclick="toggleTVMode()" title="Modo TV — rotação automática de abas">📺 Modo TV</button>
       <span class="badge-live" id="badge-live">Dados Carregados</span>
-      <span style="padding:0.35rem 0.75rem;border-radius:999px;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(167,139,250,0.1);color:var(--accent3);border:1px solid rgba(167,139,250,0.25);">V3.2</span>
+      <span style="padding:0.35rem 0.75rem;border-radius:999px;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(167,139,250,0.1);color:var(--accent3);border:1px solid rgba(167,139,250,0.25);">V3.3</span>
     </div>
   </header>
 
@@ -1721,15 +1721,25 @@ function renderResumoDezenaEmResumo(dezenaAtiva) {
   const {min, max} = diasDaDezena(dezenaAtiva);
   const dezNome = dezenaAtiva===1?"1ª Dezena (01–10)":dezenaAtiva===2?"2ª Dezena (11–20)":"3ª Dezena (21–fim)";
 
-  // Usa faturamentoData para pegar totais da dezena por vendedor
-  const dataRows = faturamentoData[0] && String(faturamentoData[0][0]||"").toLowerCase().includes("emiss")
-    ? faturamentoData.slice(1) : faturamentoData;
-  const vendMap = parseFaturamento(dataRows);
+  // Usa faturamentoData se disponível, senão usa allData como fallback (mês inteiro)
   const vendMapDez = {};
-  Object.entries(vendMap).forEach(([nome, v]) => {
-    const diasDez = Object.entries(v.diasMap).filter(([d]) => { const d2=parseInt(d); return d2>=min&&d2<=max; });
-    vendMapDez[nome] = { ...v, totalDezena: diasDez.reduce((s,[,val])=>s+val,0) };
-  });
+  if(faturamentoData && faturamentoData.length > 1) {
+    const dataRows = faturamentoData[0] && String(faturamentoData[0][0]||"").toLowerCase().includes("emiss")
+      ? faturamentoData.slice(1) : faturamentoData;
+    const vendMap = parseFaturamento(dataRows);
+    Object.entries(vendMap).forEach(([nome, v]) => {
+      if(!nome) return;
+      const diasDez = Object.entries(v.diasMap).filter(([d]) => { const d2=parseInt(d); return d2>=min&&d2<=max; });
+      const totalDezena = diasDez.reduce((s,[,val])=>s+val,0);
+      if(totalDezena > 0) vendMapDez[nome] = { ...v, totalDezena };
+    });
+  } else {
+    // Fallback: usa allData (não tem breakdown por dia, usa total do mês)
+    allData.forEach(d => {
+      if(!d.nome) return;
+      vendMapDez[d.nome] = { loja: d.loja, totalDezena: d.vendas, diasMap: {} };
+    });
+  }
 
   let html = `<div class="resumo-section-title">📅 ${dezNome}</div>`;
 
@@ -1740,7 +1750,7 @@ function renderResumoDezenaEmResumo(dezenaAtiva) {
 
     // Vendedores da loja com dados da dezena
     const vendedores = Object.entries(vendMapDez)
-      .filter(([,v]) => v.loja === loja && v.totalDezena > 0)
+      .filter(([nome, v]) => v.loja === loja && v.totalDezena > 0 && nome)
       .map(([nome, v]) => ({ nome, totalDezena: v.totalDezena }))
       .sort((a,b) => b.totalDezena - a.totalDezena);
     if(!vendedores.length) return;
@@ -1749,7 +1759,7 @@ function renderResumoDezenaEmResumo(dezenaAtiva) {
     const metaDezLoja  = getMetaDezena(lojaIdx>=0?lojaIdx:0, dezenaAtiva);
     const pctMeta      = metaDezLoja>0 ? (totalDezLoja/metaDezLoja)*100 : 0;
     const mdDezLoja    = getMetaDiaDezena(lojaIdx>=0?lojaIdx:0, dezenaAtiva, totalDezLoja);
-    const r7030        = calc7030(vendedores.map(v => ({vendas: v.totalDezena})));
+    const r7030        = calc7030(vendedores.map(v => ({vendas: v.totalDezena, nome: v.nome})));
 
     html += `<div class="resumo-loja-card" style="border-color:${corBd}33;margin-bottom:1.5rem">
       <div class="resumo-loja-header">
@@ -1779,7 +1789,7 @@ function renderResumoDezenaEmResumo(dezenaAtiva) {
 
       html += `<div class="resumo-vend-card" style="border-color:${in7030?corBd+'33':'var(--neg-color)33'}">
         <div class="resumo-vend-pos" style="${posC}">${i===0?"🥇":i===1?"🥈":i===2?"🥉":"#"+(i+1)} ${in7030?'<span class="badge-7030-ok">✓ 70/30</span>':'<span class="badge-7030-nok">✗ 70/30</span>'}</div>
-        <div class="resumo-vend-name" title="${v.nome}">${shortName(v.nome)}</div>
+        <div class="resumo-vend-name" title="${v.nome||''}">${v.nome ? shortName(v.nome) : '—'}</div>
         <div class="resumo-stat-row"><span class="resumo-stat-label">Total Dez.</span><span class="resumo-stat-val" style="color:var(--accent)">${fmtR(v.totalDezena)}</span></div>
         <div class="resumo-stat-row"><span class="resumo-stat-label">% do líder</span><span class="resumo-stat-val" style="color:${in7030?'var(--pos-color)':'var(--neg-color)'}">${pctLider}%</span></div>
         <div class="resumo-stat-row"><span class="resumo-stat-label">% Meta Dez.</span><span class="resumo-stat-val" style="color:${cor2}">${pctVend.toFixed(0)}%</span></div>
