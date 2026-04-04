@@ -395,7 +395,7 @@
       </button>
       <button class="btn-tv" id="btn-tv" onclick="toggleTVMode()" title="Modo TV — rotação automática de abas">📺 Modo TV</button>
       <span class="badge-live" id="badge-live">Dados Carregados</span>
-      <span style="padding:0.35rem 0.75rem;border-radius:999px;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(167,139,250,0.1);color:var(--accent3);border:1px solid rgba(167,139,250,0.25);">V3</span>
+      <span style="padding:0.35rem 0.75rem;border-radius:999px;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(167,139,250,0.1);color:var(--accent3);border:1px solid rgba(167,139,250,0.25);">V3.2</span>
     </div>
   </header>
 
@@ -562,6 +562,13 @@
 
   <!-- ========== ABA RESUMO ========== -->
   <div class="tab-panel" data-panel="resumo" id="panel-resumo">
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;margin-bottom:1.5rem;">
+      <span style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">Visão:</span>
+      <button class="filter-btn active" id="resumo-btn-mes" onclick="setResumoVis('mes',this)">📅 Mês</button>
+      <button class="filter-btn" id="resumo-btn-dez1" onclick="setResumoVis('dez1',this)">1ª Dezena (01–10)</button>
+      <button class="filter-btn" id="resumo-btn-dez2" onclick="setResumoVis('dez2',this)">2ª Dezena (11–20)</button>
+      <button class="filter-btn" id="resumo-btn-dez3" onclick="setResumoVis('dez3',this)">3ª Dezena (21–fim)</button>
+    </div>
     <div id="resumo-content"></div>
   </div>
 
@@ -1705,8 +1712,105 @@ function getProjecaoLoja(loja) {
   return { realizado, meta, diaD1, projecaoDezena:_projetarComCurva(realizado,li,diaD1,dezenaDiaD1), projecaoMes:_projetarComCurva(realizado,li,diaD1,ultimoDiaMes) };
 }
 
+
+// ===== RENDER RESUMO — VISÃO DEZENA (blocos compactos) =====
+function renderResumoDezenaEmResumo(dezenaAtiva) {
+  const grupoLojas = GRUPOS[grupoAtivo];
+  const todasLojas = ["ATM","PBA LJR","PBA SHOP","PARAÍSO","TAPAJÓS","OTC PBA","OTC TPJ"];
+  const lojas = todasLojas.filter(l => !grupoLojas || grupoLojas.includes(l));
+  const {min, max} = diasDaDezena(dezenaAtiva);
+  const dezNome = dezenaAtiva===1?"1ª Dezena (01–10)":dezenaAtiva===2?"2ª Dezena (11–20)":"3ª Dezena (21–fim)";
+
+  // Usa faturamentoData para pegar totais da dezena por vendedor
+  const dataRows = faturamentoData[0] && String(faturamentoData[0][0]||"").toLowerCase().includes("emiss")
+    ? faturamentoData.slice(1) : faturamentoData;
+  const vendMap = parseFaturamento(dataRows);
+  const vendMapDez = {};
+  Object.entries(vendMap).forEach(([nome, v]) => {
+    const diasDez = Object.entries(v.diasMap).filter(([d]) => { const d2=parseInt(d); return d2>=min&&d2<=max; });
+    vendMapDez[nome] = { ...v, totalDezena: diasDez.reduce((s,[,val])=>s+val,0) };
+  });
+
+  let html = `<div class="resumo-section-title">📅 ${dezNome}</div>`;
+
+  lojas.forEach(loja => {
+    const lojaIdx = ["ATM","PBA LJR","PBA SHOP","TAPAJÓS","PARAÍSO","OTC PBA","OTC TPJ"].indexOf(loja);
+    const cor   = sc(loja).tx;
+    const corBd = sc(loja).bd;
+
+    // Vendedores da loja com dados da dezena
+    const vendedores = Object.entries(vendMapDez)
+      .filter(([,v]) => v.loja === loja && v.totalDezena > 0)
+      .map(([nome, v]) => ({ nome, totalDezena: v.totalDezena }))
+      .sort((a,b) => b.totalDezena - a.totalDezena);
+    if(!vendedores.length) return;
+
+    const totalDezLoja = vendedores.reduce((s,v) => s+v.totalDezena, 0);
+    const metaDezLoja  = getMetaDezena(lojaIdx>=0?lojaIdx:0, dezenaAtiva);
+    const pctMeta      = metaDezLoja>0 ? (totalDezLoja/metaDezLoja)*100 : 0;
+    const mdDezLoja    = getMetaDiaDezena(lojaIdx>=0?lojaIdx:0, dezenaAtiva, totalDezLoja);
+    const r7030        = calc7030(vendedores.map(v => ({vendas: v.totalDezena})));
+
+    html += `<div class="resumo-loja-card" style="border-color:${corBd}33;margin-bottom:1.5rem">
+      <div class="resumo-loja-header">
+        <div class="resumo-loja-name" style="color:${cor}">${loja}</div>
+        <div class="resumo-loja-stats">
+          <div class="resumo-loja-stat"><label>Total Dezena</label><span>${fmtR(totalDezLoja)}</span></div>
+          <div class="resumo-loja-stat"><label>Meta Dezena</label><span>${fmtR(metaDezLoja)}</span></div>
+          <div class="resumo-loja-stat"><label>% Meta</label><span class="${pctMeta>=100?'yoy-green':pctMeta>=70?'yoy-yellow':'yoy-red'}">${pctMeta.toFixed(1)}%</span></div>
+          ${mdDezLoja ? `<div class="resumo-loja-stat"><label>Meta/Dia <span style="font-size:0.6rem;opacity:0.7">(D)</span></label><span style="color:var(--accent4);font-weight:700">${fmtR(mdDezLoja.metaDia)}</span></div>` : ''}
+          <div class="resumo-loja-stat"><label>70/30</label><span>${emoji7030(r7030.pct)} ${r7030.pct.toFixed(0)}%</span></div>
+        </div>
+      </div>
+      <div class="resumo-vend-grid">`;
+
+    vendedores.forEach((v, i) => {
+      const in7030   = r7030.lider>0 && v.totalDezena >= r7030.threshold;
+      const pctLider = r7030.lider>0 ? (v.totalDezena/r7030.lider*100).toFixed(0) : 0;
+      const posC     = i===0?"color:var(--accent4)":i===1?"color:#94a3b8":i===2?"color:#cd7f32":"color:var(--muted)";
+      const mvIndiv  = getMetaDiariaVendedor(v.nome, loja);
+      const metaIndivDez = mvIndiv
+        ? mvIndiv.meta * (metaDezLoja / (META_MENSAL[lojaIdx>=0?lojaIdx:0]||1))
+        : metaDezLoja / Math.max(vendedores.length, 1);
+      const pctVend  = metaIndivDez>0 ? (v.totalDezena/metaIndivDez)*100 : 0;
+      const mvDez    = getMetaDiaDezenaVendedor(v.nome, loja, v.totalDezena);
+      const metaDiaD = mvDez ? mvDez.metaDia : null;
+      const cor2     = pctVend>=100?"var(--pos-color)":pctVend>=70?"var(--accent4)":"var(--neg-color)";
+
+      html += `<div class="resumo-vend-card" style="border-color:${in7030?corBd+'33':'var(--neg-color)33'}">
+        <div class="resumo-vend-pos" style="${posC}">${i===0?"🥇":i===1?"🥈":i===2?"🥉":"#"+(i+1)} ${in7030?'<span class="badge-7030-ok">✓ 70/30</span>':'<span class="badge-7030-nok">✗ 70/30</span>'}</div>
+        <div class="resumo-vend-name" title="${v.nome}">${shortName(v.nome)}</div>
+        <div class="resumo-stat-row"><span class="resumo-stat-label">Total Dez.</span><span class="resumo-stat-val" style="color:var(--accent)">${fmtR(v.totalDezena)}</span></div>
+        <div class="resumo-stat-row"><span class="resumo-stat-label">% do líder</span><span class="resumo-stat-val" style="color:${in7030?'var(--pos-color)':'var(--neg-color)'}">${pctLider}%</span></div>
+        <div class="resumo-stat-row"><span class="resumo-stat-label">% Meta Dez.</span><span class="resumo-stat-val" style="color:${cor2}">${pctVend.toFixed(0)}%</span></div>
+        ${metaDiaD !== null ? `<div class="resumo-stat-row" style="margin-top:0.4rem;padding-top:0.4rem;border-top:1px solid var(--border)">
+          <span class="resumo-stat-label">Meta/dia <span style="font-size:0.6rem;opacity:0.7">(D)</span></span>
+          <span class="resumo-stat-val" style="color:var(--accent4)">${fmtR(Math.max(0, metaDiaD))}</span>
+        </div>` : ''}
+      </div>`;
+    });
+
+    html += `</div></div>`;
+  });
+
+  document.getElementById("resumo-content").innerHTML = html || "<p style='color:var(--muted);padding:2rem'>Nenhum dado.</p>";
+}
+
 // ===== RENDER RESUMO =====
+let resumoVisao = "mes"; // "mes" | "dez1" | "dez2" | "dez3"
+function setResumoVis(vis, btn) {
+  resumoVisao = vis;
+  document.querySelectorAll("#panel-resumo .filter-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  renderResumo();
+}
+
 function renderResumo() {
+  if(resumoVisao !== "mes") {
+    const dezMap = {"dez1":1,"dez2":2,"dez3":3};
+    renderResumoDezenaEmResumo(dezMap[resumoVisao]);
+    return;
+  }
   const grupoLojas = GRUPOS[grupoAtivo];
   const todasLojas = ["ATM","PBA LJR","PBA SHOP","PARAÍSO","TAPAJÓS","OTC PBA","OTC TPJ"];
   const lojas = todasLojas.filter(l => !grupoLojas || grupoLojas.includes(l));
