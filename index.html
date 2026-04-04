@@ -1266,7 +1266,9 @@ function getD1Idx() {
   }
   return 0;
 }
-const HOJE_IDX = getD1Idx();
+// HOJE_IDX é recalculado a cada render pois CURVA_RAW pode ser atualizada pelo Sheets
+let HOJE_IDX = getD1Idx();
+function recalcHojeIdx() { HOJE_IDX = getD1Idx(); }
 
 function getFatRealPorLoja() {
   const grupoLojas = GRUPOS[grupoAtivo];
@@ -1283,6 +1285,7 @@ let curvaLojaAtiva = 0;
 let chartCurvaDiario = null;
 
 function renderCurva() {
+  recalcHojeIdx();
   const fatReal = getFatRealPorLoja();
   const espHoje = LOJAS_CURVA.map((_,li) =>
     CURVA_RAW.slice(0, HOJE_IDX+1).reduce((s,r) => s + r.vals[li], 0)
@@ -1322,23 +1325,17 @@ function renderCurva() {
     const dentro    = desvioL >= 0;
     const faltaMeta = meta - realizado;
     const diasRest  = diasRestantes[li];
-
-    // Meta do dia recalculada com base na curva:
-    // curvaHoje = valor da curva no dia de hoje (HOJE_IDX)
-    // déficit = realizado - curva esperada até hoje (negativo = devendo)
-    // peso de hoje = curvaHoje / curvaRestante (inclui hoje)
-    // metaDiaRecalc = curvaHoje + (déficit negativo distribuído pelo peso de hoje)
+    // Meta do dia recalculada pela curva ponderada:
+    // peso de hoje = curva de hoje / (curva de hoje + curva restante)
+    // meta hoje = curva hoje + (desvio acumulado × peso de hoje)
     const curvaHoje        = CURVA_RAW[HOJE_IDX] ? CURVA_RAW[HOJE_IDX].vals[li] : 0;
     const curvaRestComHoje = curvaHoje + curvaRestante[li];
     const pesoHoje         = curvaRestComHoje > 0 ? curvaHoje / curvaRestComHoje : 0;
-    // metaDiaFinal = curva de hoje + (desvio acumulado × peso de hoje na curva restante)
     const metaDiaFinal     = curvaHoje + desvioL * pesoHoje;
-
-    // Projeção: fator de ritmo acumulado × meta mensal
+    // Projeção: fator acumulado × meta mensal
     const fator       = esperado > 0 ? realizado / esperado : 0;
     const projecao    = fator * meta;
     const projecaoDif = projecao - meta;
-
     const cor   = sc(loja).tx;
     const corBd = sc(loja).bd;
     return `<div class="curva-card" style="border-color:${corBd}33">
@@ -1364,7 +1361,6 @@ function renderCurva() {
   }).join("");
 
   const tbody = document.getElementById("tbody-meta-recalc");
-  // Adiciona coluna Projeção Mês no cabeçalho se ainda não existe
   const thead = document.querySelector("#table-meta-recalc thead tr");
   if(thead && thead.children.length < 6) {
     const th = document.createElement("th");
@@ -1377,12 +1373,10 @@ function renderCurva() {
     const meta      = META_MENSAL[li];
     const desvioL   = realizado - espHoje[li];
     const dentro    = desvioL >= 0;
-    // Meta do dia recalculada pela curva ponderada
     const curvaHoje        = CURVA_RAW[HOJE_IDX] ? CURVA_RAW[HOJE_IDX].vals[li] : 0;
     const curvaRestComHoje = curvaHoje + curvaRestante[li];
     const pesoHoje         = curvaRestComHoje > 0 ? curvaHoje / curvaRestComHoje : 0;
     const metaDiaFinal     = curvaHoje + desvioL * pesoHoje;
-    // Projeção: fator acumulado × meta mensal
     const fator    = espHoje[li] > 0 ? realizado / espHoje[li] : 0;
     const projecao = fator * meta;
     const projDif  = projecao - meta;
@@ -1450,13 +1444,9 @@ function renderCurvaChart() {
       return +(totalReal * (r.vals[li] / curvaSomada)).toFixed(2);
     });
   }
-  const espHojeChart    = CURVA_RAW.slice(0, HOJE_IDX+1).reduce((s,r) => s + r.vals[li], 0);
-  const desvioChart     = totalReal - espHojeChart;
-  const curvaRestChart  = CURVA_RAW.slice(HOJE_IDX+1).reduce((s,r) => s + r.vals[li], 0);
-  // Projeção: fator acumulado × meta mensal
-  const fatorChart  = espHojeChart > 0 ? totalReal / espHojeChart : 1;
-  // Meta/dia recalculada pela curva ponderada para cada dia futuro
-  const recalcVals  = CURVA_RAW.map((r, di) => {
+  const espHojeChart   = CURVA_RAW.slice(0, HOJE_IDX+1).reduce((s,r) => s + r.vals[li], 0);
+  const desvioChart    = totalReal - espHojeChart;
+  const recalcVals     = CURVA_RAW.map((r, di) => {
     if(di <= HOJE_IDX || r.vals[li] === 0) return null;
     const curvaRestComEste = CURVA_RAW.slice(di).reduce((s,rr) => s + rr.vals[li], 0);
     const pesoEste = curvaRestComEste > 0 ? r.vals[li] / curvaRestComEste : 0;
