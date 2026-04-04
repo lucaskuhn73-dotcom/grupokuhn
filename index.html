@@ -1594,23 +1594,71 @@ function getMetaDiariaVendedor(nomeVendedor, loja) {
   const lojaNorm  = LOJA_NORM[loja] || loja.toUpperCase();
   const colIdx = rowLojas.findIndex((l,i) => (l===lojaNorm||l.includes(lojaNorm)) && rowCargos[i]===cargo);
   if(colIdx < 0) return null;
+
+  function parseVendVal(v) {
+    if(!v || String(v).trim()==="-" || String(v).trim()==="R$  -") return 0;
+    const raw = String(v).replace(/[R$\s]/g,"").replace(/\.(?=\d{3})/g,"").replace(",",".");
+    const n = parseFloat(raw); return isNaN(n) ? 0 : n;
+  }
+
   let meta = 0;
   const metaRow = curvaVendData.find(r => String(r[0]||"").toLowerCase().trim() === "meta");
-  if(metaRow) { const raw = String(metaRow[colIdx]||"0").replace(/[R$\s]/g,"").replace(/\.(?=\d{3})/g,"").replace(",","."); const v = parseFloat(raw); if(!isNaN(v) && v>0) meta = v; }
+  if(metaRow) { const v = parseVendVal(metaRow[colIdx]); if(v > 0) meta = v; }
   if(!meta) return null;
+
   const vend = allData.find(d => d.nome === nomeVendedor);
   const realizado = vend ? vend.vendas : 0;
-  const d1Idx = getD1Idx();
-  let diasRestantes = 0;
-  curvaVendData.slice(2).forEach((row, ri) => {
-    const dataCell = String(row[0]||"").trim();
-    if(!dataCell || dataCell.toLowerCase().includes("meta")) return;
-    if(ri <= d1Idx) return;
-    const v = parseFloat(String(row[colIdx]||"0").replace(/[R$\s]/g,"").replace(/\.(?=\d{3})/g,"").replace(",","."));
-    if(v > 0) diasRestantes++;
+
+  // Separa as linhas de dados (ignora cabeçalhos e linha meta)
+  const dataRows = curvaVendData.slice(2).filter(r => {
+    const c = String(r[0]||"").trim();
+    return c && !c.toLowerCase().includes("meta");
   });
-  if(!diasRestantes) return null;
-  return { meta, realizado, metaDia:(meta - realizado) / diasRestantes, diasRestantes, pctMeta: meta > 0 ? (realizado / meta) * 100 : 0 };
+
+  const hoje = new Date();
+  const diaHoje = hoje.getDate();
+  const mesHoje = hoje.getMonth() + 1;
+
+  function getDiaMes(cell) {
+    const s = String(cell||"").trim();
+    const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if(iso) return { dia: parseInt(iso[3]), mes: parseInt(iso[2]) };
+    const sl  = s.match(/^(\d{1,2})\/(\d{1,2})/);
+    if(sl) return { dia: parseInt(sl[1]), mes: parseInt(sl[2]) };
+    return null;
+  }
+
+  // Acumulado da curva até ontem (para calcular desvio)
+  let curvaAteOntem = 0;
+  // Curva de hoje (para meta do dia)
+  let curvaHoje = 0;
+  // Curva restante após hoje (para peso de hoje)
+  let curvaAposHoje = 0;
+
+  dataRows.forEach(row => {
+    const dm = getDiaMes(row[0]);
+    if(!dm) return;
+    const val = parseVendVal(row[colIdx]);
+    const isHoje   = dm.mes === mesHoje && dm.dia === diaHoje;
+    const isOntem  = dm.mes  < mesHoje || (dm.mes === mesHoje && dm.dia < diaHoje);
+    const isDepois = dm.mes  > mesHoje || (dm.mes === mesHoje && dm.dia > diaHoje);
+    if(isOntem)   curvaAteOntem  += val;
+    if(isHoje)    curvaHoje       = val;
+    if(isDepois)  curvaAposHoje  += val;
+  });
+
+  // Desvio até ontem = realizado - curva esperada até ontem
+  const desvio = realizado - curvaAteOntem;
+
+  // Peso de hoje = curva hoje / (curva hoje + curva após hoje)
+  const curvaRestComHoje = curvaHoje + curvaAposHoje;
+  const pesoHoje = curvaRestComHoje > 0 ? curvaHoje / curvaRestComHoje : 0;
+
+  // Meta do dia = curva de hoje + (desvio × peso de hoje)
+  const metaDia = curvaHoje + desvio * pesoHoje;
+
+  const pctMeta = meta > 0 ? (realizado / meta) * 100 : 0;
+  return { meta, realizado, metaDia, curvaHoje, desvio, pctMeta };
 }
 
 function _curvaAcumulada(li, ateDia) {
