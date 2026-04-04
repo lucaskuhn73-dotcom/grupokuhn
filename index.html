@@ -1240,6 +1240,8 @@ let CURVA_RAW = [];
 let META_MENSAL = [60000,80000,126000,92000,55000,95000,90000];
 
 function getD1Idx() {
+  // Retorna o índice do último dia ANTERIOR a hoje com valor significativo (> 10)
+  // Usado para calcular o acumulado/desvio até ontem
   const hoje = new Date();
   const diaHoje = hoje.getDate();
   const mesHoje = hoje.getMonth() + 1;
@@ -1248,14 +1250,33 @@ function getD1Idx() {
     const dia = parseInt(partes[0]);
     const mes = parseInt(partes[1]);
     if(mes < mesHoje || (mes === mesHoje && dia < diaHoje)) {
-      if(CURVA_RAW[i].vals.some(v => v > 0)) return i;
+      if(CURVA_RAW[i].vals.some(v => v > 10)) return i;
     }
   }
   return 0;
 }
-// HOJE_IDX é recalculado a cada render pois CURVA_RAW pode ser atualizada pelo Sheets
-let HOJE_IDX = getD1Idx();
-function recalcHojeIdx() { HOJE_IDX = getD1Idx(); }
+
+function getHojeIdx() {
+  // Retorna o índice do dia de HOJE na curva (para meta recalculada do dia)
+  const hoje = new Date();
+  const diaHoje = hoje.getDate();
+  const mesHoje = hoje.getMonth() + 1;
+  for(let i = 0; i < CURVA_RAW.length; i++) {
+    const partes = CURVA_RAW[i].data.split("/");
+    const dia = parseInt(partes[0]);
+    const mes = parseInt(partes[1]);
+    if(mes === mesHoje && dia === diaHoje) return i;
+  }
+  return -1; // hoje não está na curva ainda
+}
+// HOJE_IDX = índice de ontem (para acumulado/desvio)
+// HOJE_IDX_HOJE = índice do dia atual (para meta recalculada do dia)
+let HOJE_IDX = 0;
+let HOJE_IDX_HOJE = -1;
+function recalcHojeIdx() {
+  HOJE_IDX = getD1Idx();
+  HOJE_IDX_HOJE = getHojeIdx();
+}
 
 function getFatRealPorLoja() {
   const grupoLojas = GRUPOS[grupoAtivo];
@@ -1287,11 +1308,13 @@ function renderCurva() {
   const espHoje = LOJAS_CURVA.map((_,li) =>
     CURVA_RAW.slice(0, HOJE_IDX+1).reduce((s,r) => s + r.vals[li], 0)
   );
+  // diasRestantes e curvaRestante = a partir de AMANHÃ (depois do dia de hoje)
+  const idxAposHoje = HOJE_IDX_HOJE >= 0 ? HOJE_IDX_HOJE + 1 : HOJE_IDX + 1;
   const diasRestantes = LOJAS_CURVA.map((_,li) =>
-    CURVA_RAW.slice(HOJE_IDX+1).filter(r => r.vals[li] > 0).length
+    CURVA_RAW.slice(idxAposHoje).filter(r => r.vals[li] > 10).length
   );
   const curvaRestante = LOJAS_CURVA.map((_,li) =>
-    CURVA_RAW.slice(HOJE_IDX+1).reduce((s,r) => s + r.vals[li], 0)
+    CURVA_RAW.slice(idxAposHoje).reduce((s,r) => s + r.vals[li], 0)
   );
   const grupoLojas = GRUPOS[grupoAtivo];
   const lojaIdxs = LOJAS_CURVA.map((_,i)=>i).filter(i => {
@@ -1323,13 +1346,13 @@ function renderCurva() {
     const faltaMeta = meta - realizado;
     const diasRest  = diasRestantes[li];
     // Meta do dia recalculada pela curva ponderada:
-    // peso de hoje = curva de hoje / (curva de hoje + curva restante)
-    // meta hoje = curva hoje + (desvio acumulado × peso de hoje)
-    const curvaHoje        = CURVA_RAW[HOJE_IDX] ? CURVA_RAW[HOJE_IDX].vals[li] : 0;
+    // desvio = acumulado até ontem; curvaHoje = previsto para hoje
+    // meta hoje = curva hoje + (desvio até ontem × peso de hoje)
+    const curvaHoje        = HOJE_IDX_HOJE >= 0 && CURVA_RAW[HOJE_IDX_HOJE] ? CURVA_RAW[HOJE_IDX_HOJE].vals[li] : 0;
     const curvaRestComHoje = curvaHoje + curvaRestante[li];
     const pesoHoje         = curvaRestComHoje > 0 ? curvaHoje / curvaRestComHoje : 0;
     const metaDiaFinal     = curvaHoje + desvioL * pesoHoje;
-    // Projeção: fator acumulado × meta mensal
+    // Projeção: fator acumulado (até ontem) × meta mensal
     const fator       = esperado > 0 ? realizado / esperado : 0;
     const projecao    = fator * meta;
     const projecaoDif = projecao - meta;
@@ -1370,7 +1393,7 @@ function renderCurva() {
     const meta      = META_MENSAL[li];
     const desvioL   = realizado - espHoje[li];
     const dentro    = desvioL >= 0;
-    const curvaHoje        = CURVA_RAW[HOJE_IDX] ? CURVA_RAW[HOJE_IDX].vals[li] : 0;
+    const curvaHoje        = HOJE_IDX_HOJE >= 0 && CURVA_RAW[HOJE_IDX_HOJE] ? CURVA_RAW[HOJE_IDX_HOJE].vals[li] : 0;
     const curvaRestComHoje = curvaHoje + curvaRestante[li];
     const pesoHoje         = curvaRestComHoje > 0 ? curvaHoje / curvaRestComHoje : 0;
     const metaDiaFinal     = curvaHoje + desvioL * pesoHoje;
@@ -1442,7 +1465,7 @@ function renderCurvaChart() {
     });
   }
   const espHojeChart   = CURVA_RAW.slice(0, HOJE_IDX+1).reduce((s,r) => s + r.vals[li], 0);
-  const desvioChart    = totalReal - espHojeChart;
+  const desvioChart    = totalReal - espHojeChart; // desvio até ontem
   const recalcVals     = CURVA_RAW.map((r, di) => {
     if(di <= HOJE_IDX || r.vals[li] === 0) return null;
     const curvaRestComEste = CURVA_RAW.slice(di).reduce((s,rr) => s + rr.vals[li], 0);
