@@ -957,13 +957,21 @@ const CACHE_KEY    = "gkuhn_dash_cache_v2";
 const CACHE_TTL_MS = 15 * 60 * 1000;
 
 function cacheSave(json) {
-  try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: json })); } catch(e) {}
+  const mes = new Date().getMonth() + "/" + new Date().getFullYear();
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), mes, data: json })); } catch(e) {}
 }
 function cacheLoad() {
   try {
     const raw = localStorage.getItem(CACHE_KEY);
     if(!raw) return null;
-    const { ts, data } = JSON.parse(raw);
+    const { ts, mes, data } = JSON.parse(raw);
+    const mesAtual = new Date().getMonth() + "/" + new Date().getFullYear();
+    // Invalida cache se for de outro mês
+    if(mes !== mesAtual) {
+      localStorage.removeItem(CACHE_KEY);
+      console.log("Cache de mês anterior removido automaticamente.");
+      return null;
+    }
     const idadeMin = Math.round((Date.now() - ts) / 60000);
     return { data, idadeMin, expirado: (Date.now() - ts) > CACHE_TTL_MS };
   } catch(e) { return null; }
@@ -1132,8 +1140,8 @@ function loadFromSheets() {
             return null;
           }
           function parseVal(v) {
-            if(v===undefined||v===null||v==="") return 0;
-            const n = parseFloat(String(v).replace(/[R$\s\.]/g,"").replace(",",".")); return isNaN(n)?0:n;
+            if(v===undefined||v===null||v===""||v==="-") return 0;
+            const n = parseFloat(String(v).replace(/[R$\s]/g,"").replace(/\.(?=\d{3})/g,"").replace(",",".")); return isNaN(n)?0:n;
           }
           json.curva.forEach(row => {
             const dataCell = String(row[0]).trim();
@@ -1226,39 +1234,8 @@ function loadFromFile(e) {
 const LOJAS_CURVA   = ["ALTAMIRA","PBA LJR","PBA SHOP","TAPAJOS","PARAISO","OTC PBA","OTC TPJ"];
 const CURVA_TO_LOJA = {0:"ATM",1:"PBA LJR",2:"PBA SHOP",3:"TAPAJÓS",4:"PARAÍSO",5:"OTC PBA",6:"OTC TPJ"};
 
-const CURVA_RAW = [
-  {data:"01/03",vals:[0,0,4045.23,2953.66,1765.77,2261.21,2142.20]},
-  {data:"02/03",vals:[1790.93,2387.91,3439.26,2511.20,1501.26,2983.75,2826.71]},
-  {data:"03/03",vals:[1671.08,2228.10,3605.11,2632.30,1573.66,2794.55,2647.46]},
-  {data:"04/03",vals:[2225.90,2967.86,3690.46,2694.62,1610.92,2748.49,2603.83]},
-  {data:"05/03",vals:[2395.08,3193.44,3575.68,2610.82,1560.81,2365.68,2241.17]},
-  {data:"06/03",vals:[3314.20,4418.93,4864.19,3551.63,2123.26,2813.54,2665.46]},
-  {data:"07/03",vals:[3351.09,4468.12,7100.31,5184.36,3099.34,5004.47,4741.07]},
-  {data:"08/03",vals:[0,0,4174.81,3048.27,1822.34,2504.17,2372.37]},
-  {data:"09/03",vals:[2677.89,3570.52,3467.73,2532.00,1513.69,3015.27,2856.57]},
-  {data:"10/03",vals:[2087.07,2782.76,2633.97,1923.21,1149.75,2540.28,2406.58]},
-  {data:"11/03",vals:[2422.83,3230.45,3393.95,2478.12,1481.48,2814.86,2666.71]},
-  {data:"12/03",vals:[1686.47,2248.63,3543.14,2587.06,1546.61,3558.95,3371.64]},
-  {data:"13/03",vals:[2940.34,3920.45,4718.89,3445.54,2059.83,2779.40,2633.12]},
-  {data:"14/03",vals:[3122.95,4163.93,6926.61,5057.53,3023.52,5717.87,5416.93]},
-  {data:"15/03",vals:[0,0,4081.33,2980.02,1781.53,2945.34,2790.32]},
-  {data:"16/03",vals:[2550.07,3400.09,2862.39,2090.00,1249.46,2761.66,2616.31]},
-  {data:"17/03",vals:[1435.26,1913.67,3386.57,2472.74,1478.27,1219.73,1155.53]},
-  {data:"18/03",vals:[1713.52,2284.69,3182.62,2323.81,1389.24,3105.88,2942.42]},
-  {data:"19/03",vals:[1474.15,1965.53,2673.18,1951.85,1166.87,3270.45,3098.32]},
-  {data:"20/03",vals:[1791.37,2388.49,3226.50,2355.86,1408.39,2609.89,2472.52]},
-  {data:"21/03",vals:[3342.52,4456.70,5784.61,4223.68,2525.03,4634.92,4390.98]},
-  {data:"22/03",vals:[0,0,3346.09,2443.17,1460.59,1875.28,1776.58]},
-  {data:"23/03",vals:[1843.42,2457.89,3024.76,2208.56,1320.33,2014.90,1908.85]},
-  {data:"24/03",vals:[1529.23,2038.97,3272.14,2389.18,1428.32,3177.94,3010.68]},
-  {data:"25/03",vals:[1781.97,2375.96,2751.82,2009.27,1201.19,2893.93,2741.62]},
-  {data:"26/03",vals:[2343.82,3125.10,4245.15,3099.63,1853.04,2601.49,2464.57]},
-  {data:"27/03",vals:[2486.70,3315.60,5627.92,4109.27,2456.63,3025.34,2866.11]},
-  {data:"28/03",vals:[4119.03,5492.04,7664.62,5596.39,3345.67,6069.05,5749.63]},
-  {data:"29/03",vals:[0,0,4895.77,3574.69,2137.04,3205.44,3036.73]},
-  {data:"30/03",vals:[2974.01,3965.35,3839.55,2803.48,1676.00,3909.16,3703.41]},
-  {data:"31/03",vals:[929.11,1238.82,2955.64,2158.09,1290.16,1777.14,1683.60]},
-];
+// CURVA_RAW é preenchida dinamicamente pelo Sheets — não há fallback estático
+let CURVA_RAW = [];
 
 let META_MENSAL = [60000,80000,126000,92000,55000,95000,90000];
 
@@ -1296,6 +1273,16 @@ let chartCurvaDiario = null;
 
 function renderCurva() {
   recalcHojeIdx();
+  if(CURVA_RAW.length === 0) {
+    const grid = document.getElementById("curva-lojas-grid");
+    if(grid) grid.innerHTML = '<p style="color:var(--muted);padding:1rem;font-size:0.8rem">Aguardando dados da curva do Sheets...</p>';
+    document.getElementById("tbody-meta-recalc").innerHTML = "";
+    document.getElementById("curva-fat-total").textContent = "—";
+    document.getElementById("curva-esp-total").textContent = "—";
+    document.getElementById("curva-desvio").textContent = "—";
+    document.getElementById("curva-ok").textContent = "—";
+    return;
+  }
   const fatReal = getFatRealPorLoja();
   const espHoje = LOJAS_CURVA.map((_,li) =>
     CURVA_RAW.slice(0, HOJE_IDX+1).reduce((s,r) => s + r.vals[li], 0)
@@ -1586,7 +1573,7 @@ function getMetaDiariaVendedor(nomeVendedor, loja) {
   if(colIdx < 0) return null;
   let meta = 0;
   const metaRow = curvaVendData.find(r => String(r[0]||"").toLowerCase().trim() === "meta");
-  if(metaRow) { const v = parseFloat(String(metaRow[colIdx]||"0").replace(/[^\d,\.]/g,"").replace(",",".")); if(!isNaN(v)) meta = v; }
+  if(metaRow) { const raw = String(metaRow[colIdx]||"0").replace(/[R$\s]/g,"").replace(/\.(?=\d{3})/g,"").replace(",","."); const v = parseFloat(raw); if(!isNaN(v) && v>0) meta = v; }
   if(!meta) return null;
   const vend = allData.find(d => d.nome === nomeVendedor);
   const realizado = vend ? vend.vendas : 0;
@@ -1596,7 +1583,7 @@ function getMetaDiariaVendedor(nomeVendedor, loja) {
     const dataCell = String(row[0]||"").trim();
     if(!dataCell || dataCell.toLowerCase().includes("meta")) return;
     if(ri <= d1Idx) return;
-    const v = parseFloat(String(row[colIdx]||"0").replace(/[^\d,\.]/g,"").replace(",","."));
+    const v = parseFloat(String(row[colIdx]||"0").replace(/[R$\s]/g,"").replace(/\.(?=\d{3})/g,"").replace(",","."));
     if(v > 0) diasRestantes++;
   });
   if(!diasRestantes) return null;
