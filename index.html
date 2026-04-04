@@ -395,7 +395,7 @@
       </button>
       <button class="btn-tv" id="btn-tv" onclick="toggleTVMode()" title="Modo TV — rotação automática de abas">📺 Modo TV</button>
       <span class="badge-live" id="badge-live">Dados Carregados</span>
-      <span style="padding:0.35rem 0.75rem;border-radius:999px;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(167,139,250,0.1);color:var(--accent3);border:1px solid rgba(167,139,250,0.25);">V3.4</span>
+      <span style="padding:0.35rem 0.75rem;border-radius:999px;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(167,139,250,0.1);color:var(--accent3);border:1px solid rgba(167,139,250,0.25);">V3.5</span>
     </div>
   </header>
 
@@ -1792,27 +1792,28 @@ function renderResumoDezenaEmResumo(dezenaAtiva) {
       // Projeção da dezena
       const pv = getProjecaoVendedor(v.nome);
 
-      html += \`<div class="resumo-vend-card" style="border-color:\${in7030?corBd+'33':'var(--neg-color)33'}">
-        <div class="resumo-vend-pos" style="\${posC}">\${i===0?"🥇":i===1?"🥈":i===2?"🥉":"#"+(i+1)} \${in7030?'<span class="badge-7030-ok">✓ 70/30</span>':'<span class="badge-7030-nok">✗ 70/30</span>'}</div>
-        <div class="resumo-vend-name" title="\${v.nome||''}">\${v.nome ? shortName(v.nome) : '—'}</div>
-        <div class="resumo-stat-row"><span class="resumo-stat-label">Total Dez.</span><span class="resumo-stat-val" style="color:var(--accent)">\${fmtR(v.totalDezena)}</span></div>
-        <div class="resumo-stat-row"><span class="resumo-stat-label">% do líder</span><span class="resumo-stat-val" style="color:\${in7030?'var(--pos-color)':'var(--neg-color)'}">\${pctLider}%</span></div>
-        <div class="resumo-stat-row"><span class="resumo-stat-label">% Meta Dez.</span><span class="resumo-stat-val" style="color:\${cor2}">\${pctVend.toFixed(0)}%</span></div>
-        \${vendMes ? \`
-        <div class="resumo-stat-row"><span class="resumo-stat-label">PA</span><span class="resumo-stat-val">\${fmtN(vendMes.ppv||0)}</span></div>
-        <div class="resumo-stat-row"><span class="resumo-stat-label">TM</span><span class="resumo-stat-val">\${fmtR(vendMes.ticket||0)}</span></div>
-        <div class="resumo-stat-row"><span class="resumo-stat-label">Nº Vendas</span><span class="resumo-stat-val">\${nVendas}</span></div>
-        <div class="resumo-stat-row"><span class="resumo-stat-label">Peças</span><span class="resumo-stat-val">\${vendMes.pecas||0}</span></div>
-        \` : ''}
-        \${metaDiaD !== null ? \`<div class="resumo-stat-row" style="margin-top:0.4rem;padding-top:0.4rem;border-top:1px solid var(--border)">
-          <span class="resumo-stat-label">Meta/dia <span style="font-size:0.6rem;opacity:0.7">(D)</span></span>
-          <span class="resumo-stat-val" style="color:var(--accent4)">\${fmtR(Math.max(0, metaDiaD))}</span>
-        </div>\` : ''}
-        \${pv ? \`<div class="resumo-stat-row" style="margin-top:0.4rem;padding-top:0.4rem;border-top:1px solid var(--border)">
-          <span class="resumo-stat-label">📈 Proj. Dez.</span>
-          <span class="resumo-stat-val" style="color:var(--accent3)">\${fmtR(pv.projecaoDezena)}</span>
-        </div>\` : ''}
-      </div>\`;
+      const paVend   = vendMes ? fmtN(vendMes.ppv||0) : '—';
+      const tmVend   = vendMes ? fmtR(vendMes.ticket||0) : '—';
+      const nVendasS = nVendas > 0 ? nVendas : '—';
+      const pecasS   = vendMes ? (vendMes.pecas||0) : '—';
+      const metaDiaDStr = metaDiaD !== null ? fmtR(Math.max(0, metaDiaD)) : null;
+      const projDezStr  = pv ? fmtR(pv.projecaoDezena) : null;
+      const badge7030   = in7030 ? '<span class="badge-7030-ok">✓ 70/30</span>' : '<span class="badge-7030-nok">✗ 70/30</span>';
+      const pos7 = i===0?"🥇":i===1?"🥈":i===2?"🥉":"#"+(i+1);
+      let cardHtml = '<div class="resumo-vend-card" style="border-color:'+(in7030?corBd+'33':'var(--neg-color)33')+'">';
+      cardHtml += '<div class="resumo-vend-pos" style="'+posC+'">'+pos7+' '+badge7030+'</div>';
+      cardHtml += '<div class="resumo-vend-name" title="'+(v.nome||'')+'">'+( v.nome ? shortName(v.nome) : '—')+'</div>';
+      cardHtml += '<div class="resumo-stat-row"><span class="resumo-stat-label">Total Dez.</span><span class="resumo-stat-val" style="color:var(--accent)">'+fmtR(v.totalDezena)+'</span></div>';
+      cardHtml += '<div class="resumo-stat-row"><span class="resumo-stat-label">% do líder</span><span class="resumo-stat-val" style="color:'+(in7030?'var(--pos-color)':'var(--neg-color)')+'">'+pctLider+'%</span></div>';
+      cardHtml += '<div class="resumo-stat-row"><span class="resumo-stat-label">% Meta Dez.</span><span class="resumo-stat-val" style="color:'+cor2+'">'+pctVend.toFixed(0)+'%</span></div>';
+      cardHtml += '<div class="resumo-stat-row"><span class="resumo-stat-label">PA</span><span class="resumo-stat-val">'+paVend+'</span></div>';
+      cardHtml += '<div class="resumo-stat-row"><span class="resumo-stat-label">TM</span><span class="resumo-stat-val">'+tmVend+'</span></div>';
+      cardHtml += '<div class="resumo-stat-row"><span class="resumo-stat-label">Nº Vendas</span><span class="resumo-stat-val">'+nVendasS+'</span></div>';
+      cardHtml += '<div class="resumo-stat-row"><span class="resumo-stat-label">Peças</span><span class="resumo-stat-val">'+pecasS+'</span></div>';
+      if(metaDiaDStr) cardHtml += '<div class="resumo-stat-row" style="margin-top:0.4rem;padding-top:0.4rem;border-top:1px solid var(--border)"><span class="resumo-stat-label">Meta/dia <span style=\"font-size:0.6rem;opacity:0.7\">(D)</span></span><span class="resumo-stat-val" style="color:var(--accent4)">'+metaDiaDStr+'</span></div>';
+      if(projDezStr)  cardHtml += '<div class="resumo-stat-row" style="margin-top:0.4rem;padding-top:0.4rem;border-top:1px solid var(--border)"><span class="resumo-stat-label">📈 Proj. Dez.</span><span class="resumo-stat-val" style="color:var(--accent3)">'+projDezStr+'</span></div>';
+      cardHtml += '</div>';
+      html += cardHtml;
     });
 
     html += `</div></div>`;
