@@ -333,8 +333,8 @@
   .btn-relatorio{padding:0.45rem 1rem;border-radius:8px;font-family:'Inter',sans-serif;font-size:0.72rem;font-weight:600;cursor:pointer;border:1px solid rgba(244,114,182,0.4);background:rgba(244,114,182,0.08);color:#f472b6;transition:all 0.2s;white-space:nowrap;}
   .btn-relatorio:hover{background:rgba(244,114,182,0.18);border-color:#f472b6;}
   html.light .btn-relatorio{border-color:rgba(180,60,140,0.35);background:rgba(180,60,140,0.06);color:#b43c8c;}
-  .modal-overlay{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.2s;}
-  .modal-overlay.open{display:flex;opacity:1;pointer-events:all;}
+  .modal-overlay{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;pointer-events:none;}
+  .modal-overlay.open{pointer-events:all;}
   html.light .modal-overlay{background:rgba(0,0,0,0.45);}
   .modal-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem;width:min(520px,94vw);max-height:88vh;overflow-y:auto;transform:translateY(16px) scale(0.98);transition:transform 0.25s;box-shadow:0 24px 64px rgba(0,0,0,0.5);}
   html.light .modal-box{box-shadow:0 8px 32px rgba(0,0,0,0.15);}
@@ -2606,7 +2606,7 @@ let modalLojaSelecionada = null;
 function fecharModal() {
   const el = document.getElementById("modal-relatorio");
   el.classList.remove("open");
-  setTimeout(() => { el.style.display = "none"; }, 220);
+  el.style.display = "none";
 }
 function abrirModalRelatorio() {
   modalGrupoAtivo = "VERMELHAS";
@@ -2616,9 +2616,9 @@ function abrirModalRelatorio() {
   document.getElementById("btn-modal-gerar").disabled = true;
   const el = document.getElementById("modal-relatorio");
   el.style.display = "flex";
-  requestAnimationFrame(() => el.classList.add("open"));
+  el.classList.add("open");
 }
-function fecharModalSeFora(e) { if(e.target===document.getElementById("modal-relatorio")) fecharModal(); }
+function fecharModalSeFora(e) { if(e.target === document.getElementById("modal-relatorio")) fecharModal(); }
 function setModalGrupo(g,btn) {
   modalGrupoAtivo = g; modalLojaSelecionada = null;
   document.querySelectorAll("#modal-grupo-btns .loja-radio").forEach(b => b.classList.remove("selected"));
@@ -2630,9 +2630,9 @@ function renderModalLojas() {
   const lojas = RELATORIO_GRUPOS[modalGrupoAtivo]||[];
   document.getElementById("modal-lojas-grid").innerHTML = lojas.map(l => {
     const cor = LOJA_CORES_RPT[l]||"#888";
-    return '<label class="loja-radio" onclick="selecionarLoja(\''+l+'\',this)">'
+    return '<button type="button" class="loja-radio" onclick="selecionarLoja(\''+l+'\',this)">'
       +'<span class="loja-dot" style="background:'+cor+'"></span>'
-      +'<span>'+l+'</span></label>';
+      +'<span>'+l+'</span></button>';
   }).join("");
 }
 function selecionarLoja(loja,el) {
@@ -3057,9 +3057,17 @@ function gerarRelatorio() {
     +'<div style="padding:10px 18px">'+corpo+'</div>'
     +'</body></html>';
 
-  var w = window.open("","_blank","width=960,height=700");
-  if(!w){alert("Popup bloqueado — permita popups para este site.");return;}
-  w.document.open(); w.document.write(html); w.document.close();
+  // Usa Blob URL para evitar bloqueio de popup
+  var blob = new Blob([html], {type: 'text/html;charset=utf-8'});
+  var url  = URL.createObjectURL(blob);
+  var w    = window.open(url, "_blank");
+  if(!w) {
+    // Fallback: link para download/abrir manualmente
+    var a = document.createElement("a");
+    a.href = url; a.target = "_blank"; a.rel = "noopener";
+    a.click();
+  }
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 
 </script>
