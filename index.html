@@ -993,7 +993,7 @@ function switchTab(tab, btn) {
     if(tab==="comparadas")  renderComparadas();
     if(tab==="dezena")      renderDezena();
     if(tab==="termometro")  renderTermometro();
-    if(tab==="potencial")   { buildPotFilters(); renderPotencial(); }
+    if(tab==="potencial")   { buildPotVarsGrid(); buildPotFilters(); renderPotencial(); }
   }, 50);
 }
 
@@ -2592,17 +2592,20 @@ let potFiltroLoja = "TODAS";
 function buildPotVarsGrid() {
   const grid = document.getElementById("pot-vars-grid");
   if(!grid) return;
-  grid.innerHTML = POT_VARS_DEF.map(v => `
+  grid.innerHTML = POT_VARS_DEF.map(v => {
+    const cur = potVars[v.id] !== undefined ? potVars[v.id] : v.val;
+    return `
     <div style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:0.85rem 1rem;">
       <label style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:0.4rem">${v.label}</label>
       <div style="display:flex;align-items:center;gap:0.3rem">
-        ${v.prefix?`<span style="font-size:0.72rem;color:var(--accent);font-weight:600">${v.prefix}</span>`:''}
-        <input id="pot-inp-${v.id}" type="number" step="any" value="${v.val}"
+        ${v.prefix ? `<span style="font-size:0.72rem;color:var(--accent);font-weight:600">${v.prefix}</span>` : ''}
+        <input id="pot-inp-${v.id}" type="number" step="any" value="${cur}"
           style="background:transparent;border:none;outline:none;color:var(--text);font-family:'Inter',sans-serif;font-size:1.1rem;font-weight:800;width:100%;letter-spacing:-0.02em"
           oninput="potVars['${v.id}']=parseFloat(this.value)||0">
       </div>
       <div style="font-size:0.58rem;color:var(--muted);margin-top:0.25rem">${v.hint}</div>
-    </div>`).join("");
+    </div>`;
+  }).join("");
 }
 
 function buildPotFilters() {
