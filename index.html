@@ -395,7 +395,7 @@
       </button>
       <button class="btn-tv" id="btn-tv" onclick="toggleTVMode()" title="Modo TV — rotação automática de abas">📺 Modo TV</button>
       <span class="badge-live" id="badge-live">Dados Carregados</span>
-      <span style="padding:0.35rem 0.75rem;border-radius:999px;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(167,139,250,0.1);color:var(--accent3);border:1px solid rgba(167,139,250,0.25);">V3.5</span>
+      <span style="padding:0.35rem 0.75rem;border-radius:999px;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(167,139,250,0.1);color:var(--accent3);border:1px solid rgba(167,139,250,0.25);">V3.6</span>
     </div>
   </header>
 
@@ -1541,7 +1541,8 @@ function parseBase(rows) {
     if(lojaAtual && result[lojaAtual] && !colA && colB) {
       let nomeCat = colB.replace(/\s*\(\d+\)\s*$/, "").trim();
       if(!nomeCat) return;
-      if(nomeCat === "LENTES VISTA" || nomeCat === "MULTI LENTE") nomeCat = "LENTES";
+      if(nomeCat === "LENTES VISTA") nomeCat = "LENTES";
+      if(nomeCat === "MULTI LENTE") nomeCat = "GRAU";
       const qtde = toNum(row[2]); const valor = toNum(row[3]);
       const existing = result[lojaAtual].categorias.find(c => c.nome === nomeCat);
       if(existing) { existing.qtde += qtde; existing.valor += valor; }
