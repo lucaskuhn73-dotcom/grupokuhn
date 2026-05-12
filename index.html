@@ -395,7 +395,7 @@
       </button>
       <button class="btn-tv" id="btn-tv" onclick="toggleTVMode()" title="Modo TV — rotação automática de abas">📺 Modo TV</button>
       <span class="badge-live" id="badge-live">Dados Carregados</span>
-      <span style="padding:0.35rem 0.75rem;border-radius:999px;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(167,139,250,0.1);color:var(--accent3);border:1px solid rgba(167,139,250,0.25);">V3.5</span>
+      <span style="padding:0.35rem 0.75rem;border-radius:999px;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(167,139,250,0.1);color:var(--accent3);border:1px solid rgba(167,139,250,0.25);">V4</span>
     </div>
   </header>
 
@@ -1609,7 +1609,7 @@ function getMetaDiariaVendedor(nomeVendedor, loja) {
   }
 
   let meta = 0;
-  const metaRow = curvaVendData.find(r => String(r[0]||"").toLowerCase().trim().includes("meta");
+  const metaRow = curvaVendData.find(r => String(r[0]||"").toLowerCase().trim() === "meta");
   if(metaRow) { const v = parseVendVal(metaRow[colIdx]); if(v > 0) meta = v; }
   if(!meta) return null;
 
@@ -1645,14 +1645,17 @@ function getMetaDiariaVendedor(nomeVendedor, loja) {
   dataRows.forEach(row => {
     const dm = getDiaMes(row[0]);
     if(!dm) return;
+    if(dm.mes !== mesHoje) return; // ignora meses diferentes do atual
     const val = parseVendVal(row[colIdx]);
-    const isHoje   = dm.mes === mesHoje && dm.dia === diaHoje;
-    const isOntem  = dm.mes  < mesHoje || (dm.mes === mesHoje && dm.dia < diaHoje);
-    const isDepois = dm.mes  > mesHoje || (dm.mes === mesHoje && dm.dia > diaHoje);
+    const isHoje   = dm.dia === diaHoje;
+    const isOntem  = dm.dia < diaHoje;
+    const isDepois = dm.dia > diaHoje;
     if(isOntem)   curvaAteOntem  += val;
     if(isHoje)    curvaHoje       = val;
     if(isDepois)  curvaAposHoje  += val;
   });
+
+  if(curvaHoje <= 0) return null;
 
   // Desvio até ontem = realizado - curva esperada até ontem
   const desvio = realizado - curvaAteOntem;
@@ -1664,6 +1667,8 @@ function getMetaDiariaVendedor(nomeVendedor, loja) {
   // Meta do dia = curva de hoje - (desvio × peso de hoje)
   // desvio positivo = adiantada → reduz meta; desvio negativo = devendo → aumenta meta
   const metaDia = curvaHoje - desvio * pesoHoje;
+
+  if(!isFinite(metaDia) || metaDia < 0) return null;
 
   const pctMeta = meta > 0 ? (realizado / meta) * 100 : 0;
   return { meta, realizado, metaDia, curvaHoje, desvio, pctMeta };
@@ -2217,7 +2222,8 @@ function getMetaDiaDezenaVendedor(nomeVendedor, loja, realizadoDezena) {
   const curvaRestComHoje = curvaHoje + curvaAposHoje;
   const pesoHoje = curvaRestComHoje > 0 ? curvaHoje / curvaRestComHoje : 0;
   const metaDia = curvaHoje - desvio * pesoHoje;
-return { metaDia, curvaHoje, desvio };
+  if(!isFinite(metaDia) || metaDia < 0) return null;
+  return { metaDia, curvaHoje, desvio };
 }
 
 function extraiDia(v) {
