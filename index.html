@@ -1646,10 +1646,10 @@ function getMetaDiariaVendedor(nomeVendedor, loja) {
     const dm = getDiaMes(row[0]);
     if(!dm) return;
     if(dm.mes !== mesHoje) return; // ignora meses diferentes do atual
-    const val = parseVendVal(row[colIdx]);
-    const isHoje   = dm.dia === diaHoje;
-    const isOntem  = dm.dia < diaHoje;
-    const isDepois = dm.dia > diaHoje;
+  const val = parseVendVal(row[colIdx]);
+    if(dm.dia < hojeD)   curvaAteOntem  += val;
+    if(dm.dia === hojeD) curvaHoje       = val;
+    if(dm.dia > hojeD && dm.dia <= max)   curvaAposHoje  += val;
     if(isOntem)   curvaAteOntem  += val;
     if(isHoje)    curvaHoje       = val;
     if(isDepois)  curvaAposHoje  += val;
@@ -2223,7 +2223,8 @@ function getMetaDiaDezenaVendedor(nomeVendedor, loja, realizadoDezena) {
   const pesoHoje = curvaRestComHoje > 0 ? curvaHoje / curvaRestComHoje : 0;
   const metaDia = curvaHoje - desvio * pesoHoje;
   if(!isFinite(metaDia) || metaDia < 0) return null;
-  return { metaDia, curvaHoje, desvio };
+  if(!isFinite(metaDia) || metaDia < 0) return null;
+  return { metaDia, curvaHoje, desvio }; { metaDia, curvaHoje, desvio };
 }
 
 function extraiDia(v) {
