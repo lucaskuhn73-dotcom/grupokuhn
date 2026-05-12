@@ -1609,7 +1609,7 @@ function getMetaDiariaVendedor(nomeVendedor, loja) {
   }
 
   let meta = 0;
-  const metaRow = curvaVendData.find(r => String(r[0]||"").toLowerCase().trim() === "meta");
+  const metaRow = curvaVendData.find(r => String(r[0]||"").toLowerCase().trim().includes("meta");
   if(metaRow) { const v = parseVendVal(metaRow[colIdx]); if(v > 0) meta = v; }
   if(!meta) return null;
 
@@ -2217,7 +2217,7 @@ function getMetaDiaDezenaVendedor(nomeVendedor, loja, realizadoDezena) {
   const curvaRestComHoje = curvaHoje + curvaAposHoje;
   const pesoHoje = curvaRestComHoje > 0 ? curvaHoje / curvaRestComHoje : 0;
   const metaDia = curvaHoje - desvio * pesoHoje;
-  return { metaDia, curvaHoje, desvio };
+return { metaDia, curvaHoje, desvio };
 }
 
 function extraiDia(v) {
