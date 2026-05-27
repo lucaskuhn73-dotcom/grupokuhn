@@ -113,6 +113,9 @@
   .tab-btn[data-tab="comparadas"].active::after{background:#60a5fa;}
   .tab-btn[data-tab="dezena"].active::after{background:#f472b6;}
   .tab-btn[data-tab="termometro"].active::after{background:#fb923c;}
+  .tab-btn[data-tab="lentes"].active::after{background:#34d399;}
+  .tab-panel[data-panel="lentes"] .filter-btn.active{background:rgba(52,211,153,0.1);color:#34d399;border-color:#34d399;}
+  .tab-panel[data-panel="lentes"] .filter-btn:hover{border-color:#34d399;color:#34d399;}
   .tab-panel[data-panel="dezena"] .filter-btn.active{background:rgba(244,114,182,0.1);color:#f472b6;border-color:#f472b6;}
   .tab-panel[data-panel="dezena"] .filter-btn:hover{border-color:#f472b6;color:#f472b6;}
   .tab-panel[data-panel="termometro"] .filter-btn.active{background:rgba(251,146,60,0.1);color:#fb923c;border-color:#fb923c;}
@@ -444,6 +447,9 @@
     <button class="tab-btn" data-tab="termometro" onclick="switchTab('termometro',this)">
       <span class="tab-icon">🌡️</span> Termômetro Peças
     </button>
+    <button class="tab-btn" data-tab="lentes" onclick="switchTab('lentes',this)">
+      <span class="tab-icon">👁️</span> Lentes
+    </button>
   </div>
 
   <!-- ========== ABA INDICADORES (Vendas + PA + TM unificado) ========== -->
@@ -597,6 +603,11 @@
       <button class="filter-btn" id="term-btn-otica" onclick="setTermGrupo('OTICAS',this)">👓 Óticas</button>
     </div>
     <div id="termometro-content"><p style="color:var(--muted);padding:2rem">Clique em 🔄 Atualizar Dados para carregar.</p></div>
+  </div>
+
+  <!-- ========== ABA LENTES ========== -->
+  <div class="tab-panel" data-panel="lentes" id="panel-lentes">
+    <div id="lentes-content"><p style="color:var(--muted);padding:2rem">Clique em 🔄 Atualizar Dados para carregar.</p></div>
   </div>
 
 </div><!-- /wrap -->
@@ -953,6 +964,7 @@ function switchTab(tab, btn) {
     if(tab==="comparadas")  renderComparadas();
     if(tab==="dezena")      renderDezena();
     if(tab==="termometro")  renderTermometro();
+    if(tab==="lentes")      renderLentes();
   }, 50);
 }
 
@@ -1084,7 +1096,7 @@ function applyData(mapped, label, isDemo) {
   buildFilters();
   filters.indicadores = "TODAS";
   renderVendas(); renderPA(); renderTM(); renderCurva(); renderResumo(); renderComparadas();
-  renderDezena(); renderTermometro();
+  renderDezena(); renderTermometro(); renderLentes();
   const now = new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
   if(isDemo) {
     setStatus("⚠️ Exibindo dados de demonstração — Sheets indisponível.", "#b58800");
@@ -2086,11 +2098,11 @@ function setGrupo(g, btn) {
   btn.classList.add(cls);
   filters.indicadores = "TODAS";
   buildFilters();
-  renderVendas(); renderPA(); renderTM(); renderCurva(); renderResumo(); renderComparadas(); renderDezena(); renderTermometro();
+  renderVendas(); renderPA(); renderTM(); renderCurva(); renderResumo(); renderComparadas(); renderDezena(); renderTermometro(); renderLentes();
 }
 
 // ===== TV MODE =====
-const TV_TABS = ["indicadores","curva","resumo","comparadas","dezena","termometro"];
+const TV_TABS = ["indicadores","curva","resumo","comparadas","dezena","termometro","lentes"];
 const TV_INTERVAL = 15000;
 let tvTimer = null;
 let tvActive = false;
@@ -2543,6 +2555,259 @@ function renderTermometro() {
   }, 100);
 }
 
+// ===== LENTES =====
+function renderLentes() {
+  const container = document.getElementById("lentes-content");
+  if(!container) return;
+
+  const grupoLojas = GRUPOS[grupoAtivo];
+  const TODAS_LOJAS = ["ATM","PBA LJR","PBA SHOP","PARAÍSO","TAPAJÓS","OTC PBA","OTC TPJ"];
+  const lojasFiltradas = TODAS_LOJAS.filter(l => !grupoLojas || grupoLojas.includes(l));
+
+  // ── SEÇÃO 1: Taxa de Conversão de Lente (CG → LE) ──
+  const hasTerm = (termometrosData["CG"] && termometrosData["CG"].length > 1)
+               || (termometrosData["LE"] && termometrosData["LE"].length > 1);
+
+  // Agrega CG e LE por vendedor/loja
+  const dadosTerm = {}; // { loja: { vendedor: { CG, LE } } }
+  ["CG","LE"].forEach(cat => {
+    parseTermSheet(termometrosData[cat]||[], cat).forEach(v => {
+      if(!v.loja || v.loja==="—") return;
+      if(grupoLojas && !grupoLojas.includes(v.loja)) return;
+      if(!dadosTerm[v.loja]) dadosTerm[v.loja] = {};
+      if(!dadosTerm[v.loja][v.nome]) dadosTerm[v.loja][v.nome] = {CG:0, LE:0};
+      dadosTerm[v.loja][v.nome][cat] += v.qtde;
+    });
+  });
+
+  let htmlConv = `<div class="card" style="margin-bottom:2rem">
+    <div class="card-title" style="color:#b58800">👁️ Taxa de Conversão de Lente por Vendedor</div>
+    <p style="font-size:0.65rem;color:var(--muted);margin-bottom:1.25rem">
+      Calculada como: <strong style="color:var(--text)">Lentes (LE) ÷ Óculos de Grau (CG) × 100</strong> — indica quantos clientes de grau saíram com lente.
+    </p>`;
+
+  if(!hasTerm) {
+    htmlConv += `<p style="color:var(--muted);font-size:0.8rem;padding:1rem 0">Sem dados. Preencha as abas Term. CG e Term. LE e clique em 🔄 Atualizar.</p>`;
+  } else {
+    // Tabela resumo por loja
+    const resumoLinhas = lojasFiltradas.map(loja => {
+      const vends = dadosTerm[loja]||{};
+      const totalCG = Object.values(vends).reduce((s,v)=>s+v.CG,0);
+      const totalLE = Object.values(vends).reduce((s,v)=>s+v.LE,0);
+      if(!totalCG && !totalLE) return "";
+      const conv = totalCG > 0 ? (totalLE/totalCG*100) : 0;
+      const cor = conv >= 60 ? "var(--pos-color)" : conv >= 40 ? "var(--accent4)" : "var(--neg-color)";
+      const emoji = conv >= 60 ? "🟢" : conv >= 40 ? "🟡" : "🔴";
+      return `<tr>
+        <td style="font-weight:800;color:${sc(loja).tx}">${loja}</td>
+        <td style="text-align:right;color:#e05c1b;font-weight:700">${totalCG}</td>
+        <td style="text-align:right;color:#b58800;font-weight:700">${totalLE}</td>
+        <td style="text-align:right;font-weight:800;color:${cor}">${emoji} ${conv.toFixed(1)}%</td>
+      </tr>`;
+    }).join("");
+
+    htmlConv += `<div style="overflow-x:auto;margin-bottom:1.5rem">
+      <table class="comp-table">
+        <thead><tr>
+          <th>Loja</th>
+          <th style="text-align:right;color:#e05c1b">CG (Grau)</th>
+          <th style="text-align:right;color:#b58800">LE (Lente)</th>
+          <th style="text-align:right">Conversão</th>
+        </tr></thead>
+        <tbody>${resumoLinhas}</tbody>
+      </table>
+    </div>`;
+
+    // Detalhe por loja → vendedor
+    lojasFiltradas.forEach(loja => {
+      const vends = dadosTerm[loja]||{};
+      const nomes = Object.keys(vends).filter(n => vends[n].CG > 0 || vends[n].LE > 0);
+      if(!nomes.length) return;
+      nomes.sort((a,b) => {
+        const cA = vends[a].CG > 0 ? vends[a].LE/vends[a].CG : 0;
+        const cB = vends[b].CG > 0 ? vends[b].LE/vends[b].CG : 0;
+        return cB - cA;
+      });
+      const cor   = sc(loja).tx;
+      const corBd = sc(loja).bd;
+      const totalCG = nomes.reduce((s,n)=>s+vends[n].CG,0);
+      const totalLE = nomes.reduce((s,n)=>s+vends[n].LE,0);
+      const convLoja = totalCG > 0 ? (totalLE/totalCG*100) : 0;
+      const corConv = convLoja >= 60 ? "var(--pos-color)" : convLoja >= 40 ? "var(--accent4)" : "var(--neg-color)";
+
+      htmlConv += `<div style="margin-bottom:1.5rem;border:1px solid ${corBd}33;border-radius:12px;padding:1.25rem;background:var(--card2)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
+          <span style="font-weight:800;font-size:0.95rem;color:${cor}">${loja}</span>
+          <div style="display:flex;gap:1.5rem;font-size:0.7rem;flex-wrap:wrap;align-items:center;">
+            <span style="color:var(--muted)">CG: <strong style="color:#e05c1b">${totalCG}</strong></span>
+            <span style="color:var(--muted)">LE: <strong style="color:#b58800">${totalLE}</strong></span>
+            <span style="font-weight:800;color:${corConv}">Conv.: ${convLoja.toFixed(1)}%</span>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="comp-table">
+            <thead><tr>
+              <th style="text-align:left">#</th>
+              <th style="text-align:left">Vendedor</th>
+              <th style="text-align:right;color:#e05c1b">CG</th>
+              <th style="text-align:right;color:#b58800">LE</th>
+              <th style="text-align:right">Conversão</th>
+              <th style="text-align:right">Barra</th>
+            </tr></thead>
+            <tbody>`;
+
+      nomes.forEach((nome, i) => {
+        const cg = vends[nome].CG;
+        const le = vends[nome].LE;
+        const conv = cg > 0 ? (le/cg*100) : 0;
+        const corV = conv >= 60 ? "var(--pos-color)" : conv >= 40 ? "var(--accent4)" : "var(--neg-color)";
+        const barW = Math.min(conv, 100);
+        const barColor = conv >= 60 ? "var(--pos-color)" : conv >= 40 ? "var(--accent4)" : "var(--neg-color)";
+        const pos = i===0?"🥇":i===1?"🥈":i===2?"🥉":"#"+(i+1);
+        htmlConv += `<tr>
+          <td style="font-size:0.75rem">${pos}</td>
+          <td><div class="seller-name">${shortName(nome)}</div></td>
+          <td style="text-align:right;color:#e05c1b;font-weight:700">${cg}</td>
+          <td style="text-align:right;color:#b58800;font-weight:700">${le}</td>
+          <td style="text-align:right;font-weight:800;color:${corV}">${conv.toFixed(1)}%</td>
+          <td style="width:120px;min-width:100px">
+            <div style="background:var(--border);height:6px;border-radius:999px;overflow:hidden">
+              <div style="width:${barW}%;height:100%;background:${barColor};border-radius:999px;transition:width 0.6s ease"></div>
+            </div>
+          </td>
+        </tr>`;
+      });
+
+      // Linha total
+      const convT = totalCG > 0 ? (totalLE/totalCG*100) : 0;
+      const corT = convT >= 60 ? "var(--pos-color)" : convT >= 40 ? "var(--accent4)" : "var(--neg-color)";
+      htmlConv += `<tr style="border-top:2px solid var(--border);font-weight:800">
+        <td></td>
+        <td style="color:var(--text)">TOTAL</td>
+        <td style="text-align:right;color:#e05c1b">${totalCG}</td>
+        <td style="text-align:right;color:#b58800">${totalLE}</td>
+        <td style="text-align:right;color:${corT}">${convT.toFixed(1)}%</td>
+        <td></td>
+      </tr>`;
+
+      htmlConv += `</tbody></table></div></div>`;
+    });
+  }
+  htmlConv += `</div>`;
+
+  // ── SEÇÃO 2: % Faturamento de Lente sobre Faturamento Total ──
+  let htmlFat = `<div class="card" style="margin-bottom:2rem">
+    <div class="card-title" style="color:#34d399">💰 % Faturamento de Lente sobre Faturamento Total</div>
+    <p style="font-size:0.65rem;color:var(--muted);margin-bottom:1.25rem">
+      Fonte: <strong style="color:var(--text)">Base Atual</strong> — valor de lente (categoria LE) ÷ faturamento total da loja × 100.
+    </p>`;
+
+  // parseBase retorna { loja: { total_valor, categorias:[{nome,valor}] } }
+  const base = parseBase(baseAtualData);
+
+  if(!baseAtualData || !baseAtualData.length) {
+    htmlFat += `<p style="color:var(--muted);font-size:0.8rem;padding:1rem 0">Sem dados. Verifique a aba Base Atual na planilha e clique em 🔄 Atualizar.</p>`;
+  } else {
+    const linhasFat = lojasFiltradas.map(loja => {
+      const d = base[loja];
+      if(!d) return "";
+      const catLE = d.categorias.find(c => {
+        const n = c.nome.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+        return n === "LE" || n.includes("LENTE");
+      });
+      const valLE = catLE ? catLE.valor : 0;
+      const valTotal = d.total_valor || 0;
+      if(!valTotal) return "";
+      const pct = (valLE/valTotal)*100;
+      const cor = pct >= 20 ? "var(--pos-color)" : pct >= 10 ? "var(--accent4)" : "var(--neg-color)";
+      const emoji = pct >= 20 ? "🟢" : pct >= 10 ? "🟡" : "🔴";
+      const barW = Math.min(pct * 2, 100); // escala visual: 50% = barra cheia
+      return {loja, valLE, valTotal, pct, cor, emoji, barW};
+    }).filter(Boolean);
+
+    if(!linhasFat.length) {
+      htmlFat += `<p style="color:var(--muted);font-size:0.8rem;padding:1rem 0">Nenhum dado de lente encontrado na Base Atual para as lojas selecionadas.</p>`;
+    } else {
+      const totalLE2   = linhasFat.reduce((s,r)=>s+r.valLE,0);
+      const totalGeral = linhasFat.reduce((s,r)=>s+r.valTotal,0);
+      const pctGeral   = totalGeral > 0 ? (totalLE2/totalGeral*100) : 0;
+      const corGeral   = pctGeral >= 20 ? "var(--pos-color)" : pctGeral >= 10 ? "var(--accent4)" : "var(--neg-color)";
+
+      // KPI cards
+      htmlFat += `<div class="kpi-grid" style="margin-bottom:1.5rem">
+        <div class="kpi kpi-b">
+          <label>Fat. Total (Lojas)</label>
+          <div class="kpi-val">${fmtR(totalGeral)}</div>
+          <div class="kpi-sub">Base Atual — todas as categorias</div>
+        </div>
+        <div class="kpi kpi-d">
+          <label>Fat. Lente (LE)</label>
+          <div class="kpi-val" style="color:#b58800">${fmtR(totalLE2)}</div>
+          <div class="kpi-sub">Valor total de lentes</div>
+        </div>
+        <div class="kpi kpi-a">
+          <label>% Lente / Faturamento</label>
+          <div class="kpi-val" style="color:${corGeral}">${pctGeral.toFixed(1)}%</div>
+          <div class="kpi-sub">Participação de lentes no fat.</div>
+        </div>
+      </div>`;
+
+      // Tabela por loja
+      htmlFat += `<div style="overflow-x:auto">
+        <table class="comp-table">
+          <thead><tr>
+            <th>Loja</th>
+            <th style="text-align:right">Fat. Total</th>
+            <th style="text-align:right;color:#b58800">Fat. Lente</th>
+            <th style="text-align:right">% Lente</th>
+            <th style="min-width:140px">Participação</th>
+          </tr></thead>
+          <tbody>`;
+
+      // Sort por % descrescente
+      const sortedFat = [...linhasFat].sort((a,b)=>b.pct-a.pct);
+      sortedFat.forEach((r, i) => {
+        const pos = i===0?"🥇":i===1?"🥈":i===2?"🥉":"";
+        htmlFat += `<tr>
+          <td style="font-weight:800;color:${sc(r.loja).tx}">${pos ? pos+" " : ""}${r.loja}</td>
+          <td style="text-align:right;color:var(--muted)">${fmtR(r.valTotal)}</td>
+          <td style="text-align:right;color:#b58800;font-weight:700">${fmtR(r.valLE)}</td>
+          <td style="text-align:right;font-weight:800;color:${r.cor}">${r.emoji} ${r.pct.toFixed(1)}%</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:0.5rem">
+              <div style="flex:1;background:var(--border);height:8px;border-radius:999px;overflow:hidden;min-width:80px">
+                <div style="width:${r.barW}%;height:100%;background:#b58800;border-radius:999px;transition:width 0.6s ease;opacity:0.85"></div>
+              </div>
+            </div>
+          </td>
+        </tr>`;
+      });
+
+      // Linha total
+      htmlFat += `<tr style="border-top:2px solid var(--border);font-weight:800;background:var(--table-row-hover)">
+        <td style="color:var(--text)">TOTAL</td>
+        <td style="text-align:right;color:var(--text)">${fmtR(totalGeral)}</td>
+        <td style="text-align:right;color:#b58800">${fmtR(totalLE2)}</td>
+        <td style="text-align:right;color:${corGeral}">${pctGeral.toFixed(1)}%</td>
+        <td></td>
+      </tr>`;
+
+      htmlFat += `</tbody></table></div>`;
+
+      // Legenda de cores
+      htmlFat += `<div style="display:flex;gap:1.5rem;flex-wrap:wrap;margin-top:1.25rem;font-size:0.62rem;color:var(--muted)">
+        <span>🟢 &gt;= 20% — Excelente</span>
+        <span>🟡 10–19% — Regular</span>
+        <span>🔴 &lt; 10% — Baixo</span>
+        <span style="margin-left:auto;opacity:0.6">Barra: escala onde 50% = barra cheia</span>
+      </div>`;
+    }
+  }
+  htmlFat += `</div>`;
+
+  container.innerHTML = htmlConv + htmlFat;
+}
+
 // ===== INIT =====
 buildFilters();
 renderVendas();
@@ -2553,6 +2818,7 @@ renderResumo();
 renderComparadas();
 renderDezena();
 renderTermometro();
+renderLentes();
 
 (function initLoad() {
   const cached = cacheLoad();
