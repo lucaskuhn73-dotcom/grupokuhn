@@ -2566,28 +2566,36 @@ function renderLentes() {
 
   // ── SEÇÃO 1: Taxa de Conversão de Lente (CG → LE) ──
   const hasTerm = (termometrosData["CG"] && termometrosData["CG"].length > 1)
+               || (termometrosData["ML"] && termometrosData["ML"].length > 1)
                || (termometrosData["LE"] && termometrosData["LE"].length > 1);
 
-  // Agrega CG e LE por vendedor/loja
-  const dadosTerm = {}; // { loja: { vendedor: { CG, LE } } }
-  ["CG","LE"].forEach(cat => {
+  // Agrega CG, ML (somados como base) e LE (isolado) por vendedor/loja
+  const dadosTerm = {}; // { loja: { vendedor: { CG, LE } } }  — CG já inclui ML
+  ["CG","ML"].forEach(cat => {
     parseTermSheet(termometrosData[cat]||[], cat).forEach(v => {
       if(!v.loja || v.loja==="—") return;
       if(grupoLojas && !grupoLojas.includes(v.loja)) return;
       if(!dadosTerm[v.loja]) dadosTerm[v.loja] = {};
       if(!dadosTerm[v.loja][v.nome]) dadosTerm[v.loja][v.nome] = {CG:0, LE:0};
-      dadosTerm[v.loja][v.nome][cat] += v.qtde;
+      dadosTerm[v.loja][v.nome]["CG"] += v.qtde; // ML soma no mesmo bucket CG
     });
+  });
+  parseTermSheet(termometrosData["LE"]||[], "LE").forEach(v => {
+    if(!v.loja || v.loja==="—") return;
+    if(grupoLojas && !grupoLojas.includes(v.loja)) return;
+    if(!dadosTerm[v.loja]) dadosTerm[v.loja] = {};
+    if(!dadosTerm[v.loja][v.nome]) dadosTerm[v.loja][v.nome] = {CG:0, LE:0};
+    dadosTerm[v.loja][v.nome]["LE"] += v.qtde;
   });
 
   let htmlConv = `<div class="card" style="margin-bottom:2rem">
     <div class="card-title" style="color:#b58800">👁️ Taxa de Conversão de Lente por Vendedor</div>
     <p style="font-size:0.65rem;color:var(--muted);margin-bottom:1.25rem">
-      Calculada como: <strong style="color:var(--text)">Lentes (LE) ÷ Óculos de Grau (CG) × 100</strong> — indica quantos clientes de grau saíram com lente.
+      Calculada como: <strong style="color:var(--text)">(LE ÷ 2) ÷ (CG + Multi Lente) × 100</strong> — lentes são vendidas em pares (÷ 2); grau e multi lente somados como base de clientes potenciais.
     </p>`;
 
   if(!hasTerm) {
-    htmlConv += `<p style="color:var(--muted);font-size:0.8rem;padding:1rem 0">Sem dados. Preencha as abas Term. CG e Term. LE e clique em 🔄 Atualizar.</p>`;
+    htmlConv += `<p style="color:var(--muted);font-size:0.8rem;padding:1rem 0">Sem dados. Preencha as abas Term. CG, Term. ML e Term. LE e clique em 🔄 Atualizar.</p>`;
   } else {
     // Tabela resumo por loja
     const resumoLinhas = lojasFiltradas.map(loja => {
@@ -2595,13 +2603,14 @@ function renderLentes() {
       const totalCG = Object.values(vends).reduce((s,v)=>s+v.CG,0);
       const totalLE = Object.values(vends).reduce((s,v)=>s+v.LE,0);
       if(!totalCG && !totalLE) return "";
-      const conv = totalCG > 0 ? (totalLE/totalCG*100) : 0;
+      const totalLEpares = totalLE / 2;
+      const conv = totalCG > 0 ? (totalLEpares/totalCG*100) : 0;
       const cor = conv >= 60 ? "var(--pos-color)" : conv >= 40 ? "var(--accent4)" : "var(--neg-color)";
       const emoji = conv >= 60 ? "🟢" : conv >= 40 ? "🟡" : "🔴";
       return `<tr>
         <td style="font-weight:800;color:${sc(loja).tx}">${loja}</td>
         <td style="text-align:right;color:#e05c1b;font-weight:700">${totalCG}</td>
-        <td style="text-align:right;color:#b58800;font-weight:700">${totalLE}</td>
+        <td style="text-align:right;color:#b58800;font-weight:700">${totalLE} <span style="font-size:0.6rem;opacity:0.6">(${totalLEpares} pares)</span></td>
         <td style="text-align:right;font-weight:800;color:${cor}">${emoji} ${conv.toFixed(1)}%</td>
       </tr>`;
     }).join("");
@@ -2610,8 +2619,8 @@ function renderLentes() {
       <table class="comp-table">
         <thead><tr>
           <th>Loja</th>
-          <th style="text-align:right;color:#e05c1b">CG (Grau)</th>
-          <th style="text-align:right;color:#b58800">LE (Lente)</th>
+          <th style="text-align:right;color:#e05c1b">CG + ML</th>
+          <th style="text-align:right;color:#b58800">LE (Lente / Pares)</th>
           <th style="text-align:right">Conversão</th>
         </tr></thead>
         <tbody>${resumoLinhas}</tbody>
@@ -2632,7 +2641,8 @@ function renderLentes() {
       const corBd = sc(loja).bd;
       const totalCG = nomes.reduce((s,n)=>s+vends[n].CG,0);
       const totalLE = nomes.reduce((s,n)=>s+vends[n].LE,0);
-      const convLoja = totalCG > 0 ? (totalLE/totalCG*100) : 0;
+      const totalLEpares = totalLE / 2;
+      const convLoja = totalCG > 0 ? (totalLEpares/totalCG*100) : 0;
       const corConv = convLoja >= 60 ? "var(--pos-color)" : convLoja >= 40 ? "var(--accent4)" : "var(--neg-color)";
 
       htmlConv += `<div style="margin-bottom:1.5rem;border:1px solid ${corBd}33;border-radius:12px;padding:1.25rem;background:var(--card2)">
@@ -2640,7 +2650,7 @@ function renderLentes() {
           <span style="font-weight:800;font-size:0.95rem;color:${cor}">${loja}</span>
           <div style="display:flex;gap:1.5rem;font-size:0.7rem;flex-wrap:wrap;align-items:center;">
             <span style="color:var(--muted)">CG: <strong style="color:#e05c1b">${totalCG}</strong></span>
-            <span style="color:var(--muted)">LE: <strong style="color:#b58800">${totalLE}</strong></span>
+            <span style="color:var(--muted)">LE: <strong style="color:#b58800">${totalLE}</strong> <span style="font-size:0.6rem;opacity:0.7">(${totalLEpares} pares)</span></span>
             <span style="font-weight:800;color:${corConv}">Conv.: ${convLoja.toFixed(1)}%</span>
           </div>
         </div>
@@ -2649,8 +2659,8 @@ function renderLentes() {
             <thead><tr>
               <th style="text-align:left">#</th>
               <th style="text-align:left">Vendedor</th>
-              <th style="text-align:right;color:#e05c1b">CG</th>
-              <th style="text-align:right;color:#b58800">LE</th>
+              <th style="text-align:right;color:#e05c1b">CG+ML</th>
+              <th style="text-align:right;color:#b58800">LE (Pares)</th>
               <th style="text-align:right">Conversão</th>
               <th style="text-align:right">Barra</th>
             </tr></thead>
@@ -2659,7 +2669,8 @@ function renderLentes() {
       nomes.forEach((nome, i) => {
         const cg = vends[nome].CG;
         const le = vends[nome].LE;
-        const conv = cg > 0 ? (le/cg*100) : 0;
+        const lePares = le / 2;
+        const conv = cg > 0 ? (lePares/cg*100) : 0;
         const corV = conv >= 60 ? "var(--pos-color)" : conv >= 40 ? "var(--accent4)" : "var(--neg-color)";
         const barW = Math.min(conv, 100);
         const barColor = conv >= 60 ? "var(--pos-color)" : conv >= 40 ? "var(--accent4)" : "var(--neg-color)";
@@ -2668,7 +2679,7 @@ function renderLentes() {
           <td style="font-size:0.75rem">${pos}</td>
           <td><div class="seller-name">${shortName(nome)}</div></td>
           <td style="text-align:right;color:#e05c1b;font-weight:700">${cg}</td>
-          <td style="text-align:right;color:#b58800;font-weight:700">${le}</td>
+          <td style="text-align:right;color:#b58800;font-weight:700">${lePares} <span style="font-size:0.6rem;opacity:0.6">(${le} un)</span></td>
           <td style="text-align:right;font-weight:800;color:${corV}">${conv.toFixed(1)}%</td>
           <td style="width:120px;min-width:100px">
             <div style="background:var(--border);height:6px;border-radius:999px;overflow:hidden">
@@ -2679,13 +2690,13 @@ function renderLentes() {
       });
 
       // Linha total
-      const convT = totalCG > 0 ? (totalLE/totalCG*100) : 0;
+      const convT = totalCG > 0 ? (totalLEpares/totalCG*100) : 0;
       const corT = convT >= 60 ? "var(--pos-color)" : convT >= 40 ? "var(--accent4)" : "var(--neg-color)";
       htmlConv += `<tr style="border-top:2px solid var(--border);font-weight:800">
         <td></td>
         <td style="color:var(--text)">TOTAL</td>
         <td style="text-align:right;color:#e05c1b">${totalCG}</td>
-        <td style="text-align:right;color:#b58800">${totalLE}</td>
+        <td style="text-align:right;color:#b58800">${totalLEpares} <span style="font-size:0.6rem;font-weight:400;opacity:0.6">(${totalLE} un)</span></td>
         <td style="text-align:right;color:${corT}">${convT.toFixed(1)}%</td>
         <td></td>
       </tr>`;
