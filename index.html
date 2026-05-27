@@ -2561,7 +2561,7 @@ function renderLentes() {
   if(!container) return;
 
   const grupoLojas = GRUPOS[grupoAtivo];
-  const TODAS_LOJAS = ["ATM","PBA LJR","PBA SHOP","PARAÍSO","TAPAJÓS","OTC PBA","OTC TPJ"];
+  const TODAS_LOJAS = ["ATM","PBA LJR","PARAÍSO","TAPAJÓS","OTC PBA","OTC TPJ"];
   const lojasFiltradas = TODAS_LOJAS.filter(l => !grupoLojas || grupoLojas.includes(l));
 
   // ── SEÇÃO 1: Taxa de Conversão de Lente (CG → LE) ──
