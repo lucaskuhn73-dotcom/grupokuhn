@@ -114,8 +114,38 @@
   .tab-btn[data-tab="dezena"].active::after{background:#f472b6;}
   .tab-btn[data-tab="termometro"].active::after{background:#fb923c;}
   .tab-btn[data-tab="lentes"].active::after{background:#34d399;}
+  .tab-btn[data-tab="fechamento"].active::after{background:#f59e0b;}
   .tab-panel[data-panel="lentes"] .filter-btn.active{background:rgba(52,211,153,0.1);color:#34d399;border-color:#34d399;}
   .tab-panel[data-panel="lentes"] .filter-btn:hover{border-color:#34d399;color:#34d399;}
+  /* FECHAMENTO */
+  .tab-panel[data-panel="fechamento"] .filter-btn.active{background:rgba(245,158,11,0.1);color:#f59e0b;border-color:#f59e0b;}
+  .tab-panel[data-panel="fechamento"] .filter-btn:hover{border-color:#f59e0b;color:#f59e0b;}
+  .fech-section{margin-bottom:1.75rem;}
+  .fech-section-title{font-family:'Inter',sans-serif;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;}
+  .fech-section-title::before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:#f59e0b;}
+  .fech-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.85rem;margin-bottom:1rem;}
+  .fech-card{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:1rem 1.2rem;position:relative;overflow:hidden;box-shadow:var(--shadow);}
+  .fech-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.5rem;}
+  .fech-card-name{font-size:0.64rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);}
+  .fech-card-val{font-family:'Inter',sans-serif;font-size:1.35rem;font-weight:800;color:var(--text);letter-spacing:-0.03em;}
+  .fech-card-sub{font-size:0.6rem;color:var(--muted);margin-top:0.2rem;}
+  .fech-badge{display:inline-flex;align-items:center;padding:0.15rem 0.5rem;border-radius:999px;font-size:0.6rem;font-weight:700;letter-spacing:0.06em;}
+  .fech-badge-pos{background:rgba(52,211,153,0.12);color:var(--pos-color);border:1px solid rgba(52,211,153,0.3);}
+  .fech-badge-neg{background:rgba(248,113,113,0.12);color:var(--neg-color);border:1px solid rgba(248,113,113,0.3);}
+  .fech-badge-neu{background:rgba(96,165,250,0.12);color:#60a5fa;border:1px solid rgba(96,165,250,0.3);}
+  .fech-grupo-card{background:var(--card);border:2px solid var(--border);border-radius:12px;padding:1.25rem 1.5rem;position:relative;overflow:hidden;}
+  .fech-grupo-card::after{content:'GRUPO';position:absolute;top:0.75rem;right:0.85rem;font-size:0.55rem;font-weight:800;letter-spacing:0.15em;color:var(--muted);opacity:0.5;}
+  .fech-table{width:100%;border-collapse:collapse;}
+  .fech-table th{font-size:0.6rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);text-align:left;padding:0 0.5rem 0.75rem;border-bottom:1px solid var(--border);}
+  .fech-table th:not(:first-child){text-align:right;}
+  .fech-table td{padding:0.55rem 0.5rem;font-size:0.7rem;border-bottom:1px solid var(--border);vertical-align:middle;}
+  .fech-table td:not(:first-child){text-align:right;}
+  .fech-table tbody tr:last-child td{border-bottom:none;}
+  .fech-table .row-grupo{background:rgba(245,158,11,0.05);font-weight:800;}
+  .fech-bar-wrap{display:flex;align-items:center;gap:0.5rem;margin-top:5px;}
+  .fech-bar-bg{flex:1;height:4px;background:var(--border);border-radius:999px;overflow:hidden;}
+  .fech-bar-fill{height:100%;border-radius:999px;transition:width 0.8s ease;}
+  html.light .fech-card{background:#f8f9fa;}
   .tab-panel[data-panel="dezena"] .filter-btn.active{background:rgba(244,114,182,0.1);color:#f472b6;border-color:#f472b6;}
   .tab-panel[data-panel="dezena"] .filter-btn:hover{border-color:#f472b6;color:#f472b6;}
   .tab-panel[data-panel="termometro"] .filter-btn.active{background:rgba(251,146,60,0.1);color:#fb923c;border-color:#fb923c;}
@@ -450,6 +480,9 @@
     <button class="tab-btn" data-tab="lentes" onclick="switchTab('lentes',this)">
       <span class="tab-icon">👁️</span> Lentes
     </button>
+    <button class="tab-btn" data-tab="fechamento" onclick="switchTab('fechamento',this)">
+      <span class="tab-icon">🏁</span> Fechamento
+    </button>
   </div>
 
   <!-- ========== ABA INDICADORES (Vendas + PA + TM unificado) ========== -->
@@ -608,6 +641,18 @@
   <!-- ========== ABA LENTES ========== -->
   <div class="tab-panel" data-panel="lentes" id="panel-lentes">
     <div id="lentes-content"><p style="color:var(--muted);padding:2rem">Clique em 🔄 Atualizar Dados para carregar.</p></div>
+  </div>
+
+  <!-- ========== ABA FECHAMENTO ========== -->
+  <div class="tab-panel" data-panel="fechamento" id="panel-fechamento">
+    <!-- Filtro de Grupo específico para Fechamento -->
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;margin-bottom:1.75rem;">
+      <span style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">Grupo:</span>
+      <button class="filter-btn active" id="fech-btn-todas" onclick="setFechGrupo('TODAS',this)">🏪 Todas</button>
+      <button class="filter-btn" id="fech-btn-verm" onclick="setFechGrupo('VERMELHAS',this)">🔴 Vermelhas</button>
+      <button class="filter-btn" id="fech-btn-otica" onclick="setFechGrupo('OTICAS',this)">👓 Óticas</button>
+    </div>
+    <div id="fechamento-content"><p style="color:var(--muted);padding:2rem">Clique em 🔄 Atualizar Dados para carregar.</p></div>
   </div>
 
 </div><!-- /wrap -->
@@ -965,6 +1010,7 @@ function switchTab(tab, btn) {
     if(tab==="dezena")      renderDezena();
     if(tab==="termometro")  renderTermometro();
     if(tab==="lentes")      renderLentes();
+    if(tab==="fechamento")  renderFechamento();
   }, 50);
 }
 
@@ -1096,7 +1142,7 @@ function applyData(mapped, label, isDemo) {
   buildFilters();
   filters.indicadores = "TODAS";
   renderVendas(); renderPA(); renderTM(); renderCurva(); renderResumo(); renderComparadas();
-  renderDezena(); renderTermometro(); renderLentes();
+  renderDezena(); renderTermometro(); renderLentes(); renderFechamento();
   const now = new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
   if(isDemo) {
     setStatus("⚠️ Exibindo dados de demonstração — Sheets indisponível.", "#b58800");
@@ -3355,7 +3401,308 @@ function gerarRelatorio() {
   }
   setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
+// ===== FECHAMENTO =====
+let fechGrupoAtivo = "TODAS";
+
+function setFechGrupo(g, btn) {
+  fechGrupoAtivo = g;
+  document.querySelectorAll("#panel-fechamento .filter-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  renderFechamento();
+}
+
+function renderFechamento() {
+  const container = document.getElementById("fechamento-content");
+  if(!container) return;
+
+  const LOJAS_ALL  = ["ATM","PBA LJR","PBA SHOP","PARAÍSO","TAPAJÓS","OTC PBA","OTC TPJ"];
+  const grupoLojas = GRUPOS[fechGrupoAtivo];
+  const lojas = LOJAS_ALL.filter(l => !grupoLojas || grupoLojas.includes(l));
+
+  const atual    = parseBase(baseAtualData);
+  const anterior = parseBase(baseAnteriorData);
+
+  const semDados = !baseAtualData.length && !baseAnteriorData.length && !allData.length;
+  if(semDados) {
+    container.innerHTML = `<div style="color:var(--muted);padding:2rem;text-align:center">Clique em 🔄 Atualizar Dados para carregar.</div>`;
+    return;
+  }
+
+  // ── 1. COMPARADAS (% YoY de peças e faturamento) ──────────────────
+  function buildComparadasSection() {
+    let grupoQtdeAt=0, grupoQtdeAnt=0, grupoFatAt=0, grupoFatAnt=0;
+
+    const lojaRows = lojas.map(loja => {
+      const a = atual[loja]    || { total_qtde:0, total_valor:0 };
+      const b = anterior[loja] || { total_qtde:0, total_valor:0 };
+      grupoQtdeAt  += a.total_qtde;  grupoQtdeAnt += b.total_qtde;
+      grupoFatAt   += a.total_valor; grupoFatAnt  += b.total_valor;
+      const varP = b.total_qtde  > 0 ? (a.total_qtde -b.total_qtde) /b.total_qtde *100 : (a.total_qtde>0?999:0);
+      const varF = b.total_valor > 0 ? (a.total_valor-b.total_valor)/b.total_valor*100 : (a.total_valor>0?999:0);
+      const cor = sc(loja).tx;
+      const badgeP = varP===999 ? `<span class="fech-badge fech-badge-pos">NOVO</span>` : `<span class="fech-badge ${varP>=0?'fech-badge-pos':'fech-badge-neg'}">${varP>=0?'+':''}${varP.toFixed(1)}%</span>`;
+      const badgeF = varF===999 ? `<span class="fech-badge fech-badge-pos">NOVO</span>` : `<span class="fech-badge ${varF>=0?'fech-badge-pos':'fech-badge-neg'}">${varF>=0?'+':''}${varF.toFixed(1)}%</span>`;
+      return `<tr>
+        <td style="font-weight:700;color:${cor}">${loja}</td>
+        <td>${b.total_qtde}</td><td>${a.total_qtde}</td><td>${badgeP}</td>
+        <td>${fmtR(b.total_valor)}</td><td>${fmtR(a.total_valor)}</td><td>${badgeF}</td>
+      </tr>`;
+    }).join("");
+
+    const gVarP = grupoQtdeAnt>0 ? (grupoQtdeAt-grupoQtdeAnt)/grupoQtdeAnt*100 : 0;
+    const gVarF = grupoFatAnt>0  ? (grupoFatAt-grupoFatAnt)/grupoFatAnt*100     : 0;
+    const gBadgeP = `<span class="fech-badge ${gVarP>=0?'fech-badge-pos':'fech-badge-neg'}">${gVarP>=0?'+':''}${gVarP.toFixed(1)}%</span>`;
+    const gBadgeF = `<span class="fech-badge ${gVarF>=0?'fech-badge-pos':'fech-badge-neg'}">${gVarF>=0?'+':''}${gVarF.toFixed(1)}%</span>`;
+    const grupoRow = `<tr class="row-grupo" style="border-top:2px solid var(--border)">
+      <td style="color:#f59e0b">GRUPO</td>
+      <td>${grupoQtdeAnt}</td><td>${grupoQtdeAt}</td><td>${gBadgeP}</td>
+      <td>${fmtR(grupoFatAnt)}</td><td>${fmtR(grupoFatAt)}</td><td>${gBadgeF}</td>
+    </tr>`;
+
+    return `<div class="card fech-section">
+      <div class="fech-section-title">📊 Comparadas — Peças e Faturamento (vs. Ano Anterior)</div>
+      <div style="overflow-x:auto">
+        <table class="fech-table">
+          <thead><tr>
+            <th>Loja</th>
+            <th>Peças Ant.</th><th>Peças Atual</th><th>Var. Peças</th>
+            <th>Fat. Ant.</th><th>Fat. Atual</th><th>Var. Fat.</th>
+          </tr></thead>
+          <tbody>${lojaRows}${grupoRow}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }
+
+  // ── 2. PA E TM POR LOJA ────────────────────────────────────────────
+  function buildPATMSection() {
+    // PA = col C / col D da aba indicadores = pecas / (vendas/ticket) = ppv direto
+    // TM = vendas / nVendas = ticket direto
+    // Ambos já chegam no allData via campos ppv e ticket
+    const lojaStats = {};
+    lojas.forEach(l => { lojaStats[l] = { pecas:0, vendas:0, nVendas:0, ppvSum:0, ppvCount:0 }; });
+
+    allData.forEach(d => {
+      if(!lojas.includes(d.loja)) return;
+      const s = lojaStats[d.loja];
+      s.pecas   += d.pecas  || 0;
+      s.vendas  += d.vendas || 0;
+      const nV = d.ticket > 0 ? d.vendas / d.ticket : 0;
+      s.nVendas += nV;
+      if(d.ppv > 0) { s.ppvSum += d.ppv; s.ppvCount++; }
+    });
+
+    let grupoTotPecas=0, grupoTotVendas=0, grupoTotNVendas=0, grupoPpvSum=0, grupoPpvCount=0;
+
+    const lojaRows = lojas.map(loja => {
+      const s = lojaStats[loja] || {};
+      const pa = s.ppvCount > 0 ? s.ppvSum / s.ppvCount : (s.nVendas>0 ? s.pecas/s.nVendas : 0);
+      const tm = s.nVendas > 0 ? s.vendas / s.nVendas : 0;
+      grupoTotPecas   += s.pecas;   grupoTotVendas  += s.vendas;
+      grupoTotNVendas += s.nVendas; grupoPpvSum     += s.ppvSum; grupoPpvCount += s.ppvCount;
+      const cor = sc(loja).tx;
+      const paBadge = pa >= 2 ? 'fech-badge-pos' : pa >= 1.5 ? 'fech-badge-neu' : 'fech-badge-neg';
+      const tmBadge = tm >= 500 ? 'fech-badge-pos' : tm >= 300 ? 'fech-badge-neu' : 'fech-badge-neg';
+      return `<tr>
+        <td style="font-weight:700;color:${cor}">${loja}</td>
+        <td>${s.pecas}</td>
+        <td>${Math.round(s.nVendas)}</td>
+        <td><span class="fech-badge ${paBadge}">${pa.toFixed(2)}</span></td>
+        <td><span class="fech-badge ${tmBadge}">${fmtR(tm)}</span></td>
+        <td style="color:var(--muted);font-size:0.65rem">${fmtR(s.vendas)}</td>
+      </tr>`;
+    }).join("");
+
+    const grupoPA = grupoPpvCount > 0 ? grupoPpvSum/grupoPpvCount : (grupoTotNVendas>0 ? grupoTotPecas/grupoTotNVendas : 0);
+    const grupoTM = grupoTotNVendas > 0 ? grupoTotVendas/grupoTotNVendas : 0;
+    const gPaBadge = grupoPA >= 2 ? 'fech-badge-pos' : grupoPA >= 1.5 ? 'fech-badge-neu' : 'fech-badge-neg';
+    const gTmBadge = grupoTM >= 500 ? 'fech-badge-pos' : grupoTM >= 300 ? 'fech-badge-neu' : 'fech-badge-neg';
+
+    const grupoRow = `<tr class="row-grupo" style="border-top:2px solid var(--border)">
+      <td style="color:#f59e0b">GRUPO</td>
+      <td>${grupoTotPecas}</td>
+      <td>${Math.round(grupoTotNVendas)}</td>
+      <td><span class="fech-badge ${gPaBadge}">${grupoPA.toFixed(2)}</span></td>
+      <td><span class="fech-badge ${gTmBadge}">${fmtR(grupoTM)}</span></td>
+      <td style="color:var(--muted);font-size:0.65rem">${fmtR(grupoTotVendas)}</td>
+    </tr>`;
+
+    return `<div class="card fech-section">
+      <div class="fech-section-title">📦 PA e Ticket Médio (TM) por Loja</div>
+      <div style="overflow-x:auto">
+        <table class="fech-table">
+          <thead><tr>
+            <th>Loja</th><th>Peças</th><th>Nº Vendas</th>
+            <th>PA (Peças/Venda)</th><th>TM (Ticket Médio)</th><th>Faturamento</th>
+          </tr></thead>
+          <tbody>${lojaRows}${grupoRow}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }
+
+  // ── 3. COMPARADAS DE PEÇAS (por categoria) ─────────────────────────
+  function buildComparadasPecasSection() {
+    const CATS = ["OC","RE","CG","LE","Aces"];
+    const CAT_NAMES = {"OC":"Óculos","RE":"Relógio","CG":"C. Grau","LE":"Lentes","Aces":"Acessórios"};
+
+    // Agrega por loja e categoria (igual à lógica da aba termômetro)
+    const dadosGrupo = {};
+    lojas.forEach(l => { dadosGrupo[l] = {}; });
+
+    CATS.forEach(cat => {
+      (termometrosData[cat]||[]).slice(1).forEach(row => {
+        const nome = String(row[1]||"").trim();
+        const qtde = parseInt(String(row[2]||"0").replace(/[^\d]/g,""))||0;
+        if(!nome || qtde<=0) return;
+        const l = lojaDoVendedor(nome);
+        if(!l || !lojas.includes(l)) return;
+        if(!dadosGrupo[l][cat]) dadosGrupo[l][cat] = 0;
+        dadosGrupo[l][cat] += qtde;
+      });
+    });
+
+    let grupoTotais = {}; CATS.forEach(c => { grupoTotais[c]=0; }); let grupoTotal=0;
+
+    const lojaRows = lojas.map(loja => {
+      const vals = CATS.map(cat => dadosGrupo[loja][cat]||0);
+      const total = vals.reduce((s,v)=>s+v,0);
+      vals.forEach((v,i) => { grupoTotais[CATS[i]] += v; grupoTotal += v; });
+      const cor = sc(loja).tx;
+      if(!total) return "";
+      return `<tr>
+        <td style="font-weight:700;color:${cor}">${loja}</td>
+        ${vals.map((v,i)=>`<td style="color:${v>0?'var(--text)':'var(--muted)'}">${v>0?v:"—"}</td>`).join("")}
+        <td style="font-weight:700">${total}</td>
+      </tr>`;
+    }).join("");
+
+    const gRow = `<tr class="row-grupo" style="border-top:2px solid var(--border)">
+      <td style="color:#f59e0b">GRUPO</td>
+      ${CATS.map(c=>`<td style="font-weight:700">${grupoTotais[c]||"—"}</td>`).join("")}
+      <td style="font-weight:800">${grupoTotal}</td>
+    </tr>`;
+
+    const temTermometro = CATS.some(c => termometrosData[c]&&termometrosData[c].length>1);
+    if(!temTermometro) return `<div class="card fech-section">
+      <div class="fech-section-title">🌡️ Comparadas de Peças (Termômetro)</div>
+      <p style="color:var(--muted);font-size:0.72rem">Sem dados de termômetro carregados.</p>
+    </div>`;
+
+    return `<div class="card fech-section">
+      <div class="fech-section-title">🌡️ Comparadas de Peças por Categoria</div>
+      <div style="overflow-x:auto">
+        <table class="fech-table">
+          <thead><tr>
+            <th>Loja</th>
+            ${CATS.map(c=>`<th>${CAT_NAMES[c]||c}</th>`).join("")}
+            <th>Total</th>
+          </tr></thead>
+          <tbody>${lojaRows}${gRow}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }
+
+  // ── 4. % DA META ───────────────────────────────────────────────────
+  function buildMetaSection() {
+    let grupoFat=0, grupoMeta=0;
+
+    const lojaRows = lojas.map(loja => {
+      const entry = Object.entries(CURVA_TO_LOJA).find(([,v])=>v===loja);
+      const li = entry ? parseInt(entry[0]) : -1;
+      const meta = li >= 0 ? META_MENSAL[li] : 0;
+      const fat  = allData.filter(d=>d.loja===loja).reduce((s,d)=>s+d.vendas,0);
+      grupoFat  += fat;
+      grupoMeta += meta;
+      const pct = meta > 0 ? (fat/meta)*100 : 0;
+      const pctCls = pct>=100?'fech-badge-pos':pct>=70?'fech-badge-neu':'fech-badge-neg';
+      const fillColor = pct>=100?'var(--pos-color)':pct>=70?'var(--accent4)':'var(--neg-color)';
+      const barPct = Math.min(pct, 100);
+      const cor = sc(loja).tx;
+      return `<tr>
+        <td style="font-weight:700;color:${cor}">${loja}</td>
+        <td>${fmtR(meta)}</td>
+        <td style="font-weight:600">${fmtR(fat)}</td>
+        <td>
+          <span class="fech-badge ${pctCls}">${pct.toFixed(1)}%</span>
+          <div class="fech-bar-wrap">
+            <div class="fech-bar-bg"><div class="fech-bar-fill" style="width:${barPct}%;background:${fillColor}"></div></div>
+          </div>
+        </td>
+        <td style="color:${fat>meta?'var(--pos-color)':'var(--neg-color)'};font-weight:600">${fat>meta?'+':''}${fmtR(fat-meta)}</td>
+      </tr>`;
+    }).join("");
+
+    const gPct = grupoMeta > 0 ? (grupoFat/grupoMeta)*100 : 0;
+    const gBarPct = Math.min(gPct, 100);
+    const gFillColor = gPct>=100?'var(--pos-color)':gPct>=70?'var(--accent4)':'var(--neg-color)';
+    const gPctCls = gPct>=100?'fech-badge-pos':gPct>=70?'fech-badge-neu':'fech-badge-neg';
+
+    const grupoRow = `<tr class="row-grupo" style="border-top:2px solid var(--border)">
+      <td style="color:#f59e0b">GRUPO</td>
+      <td>${fmtR(grupoMeta)}</td>
+      <td style="font-weight:700">${fmtR(grupoFat)}</td>
+      <td>
+        <span class="fech-badge ${gPctCls}">${gPct.toFixed(1)}%</span>
+        <div class="fech-bar-wrap">
+          <div class="fech-bar-bg"><div class="fech-bar-fill" style="width:${gBarPct}%;background:${gFillColor}"></div></div>
+        </div>
+      </td>
+      <td style="color:${grupoFat>grupoMeta?'var(--pos-color)':'var(--neg-color)'};font-weight:700">${grupoFat>grupoMeta?'+':''}${fmtR(grupoFat-grupoMeta)}</td>
+    </tr>`;
+
+    return `<div class="card fech-section">
+      <div class="fech-section-title">🎯 % da Meta — Lojas e Grupo</div>
+      <div style="overflow-x:auto">
+        <table class="fech-table">
+          <thead><tr>
+            <th>Loja</th><th>Meta Mês</th><th>Faturado</th><th>% Meta</th><th>Desvio (R$)</th>
+          </tr></thead>
+          <tbody>${lojaRows}${grupoRow}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }
+
+  // ── KPIs de destaque no topo ──
+  function buildKPIstrip() {
+    const lojasMeta = lojas.map(loja => {
+      const entry = Object.entries(CURVA_TO_LOJA).find(([,v])=>v===loja);
+      const li = entry ? parseInt(entry[0]) : -1;
+      const meta = li >= 0 ? META_MENSAL[li] : 0;
+      const fat  = allData.filter(d=>d.loja===loja).reduce((s,d)=>s+d.vendas,0);
+      return { loja, meta, fat, pct: meta>0?(fat/meta)*100:0 };
+    });
+    const grupoFat  = lojasMeta.reduce((s,l)=>s+l.fat,0);
+    const grupoMeta = lojasMeta.reduce((s,l)=>s+l.meta,0);
+    const gPct      = grupoMeta>0?(grupoFat/grupoMeta)*100:0;
+    const lojasOk   = lojasMeta.filter(l=>l.pct>=100).length;
+
+    // PA grupo
+    const paVals = allData.filter(d=>lojas.includes(d.loja)&&d.ppv>0);
+    const paGrupo = paVals.length > 0 ? paVals.reduce((s,d)=>s+d.ppv,0)/paVals.length : 0;
+
+    // TM grupo
+    let tVendas=0, tNVendas=0;
+    allData.filter(d=>lojas.includes(d.loja)).forEach(d=>{ tVendas+=d.vendas; tNVendas+=d.ticket>0?d.vendas/d.ticket:0; });
+    const tmGrupo = tNVendas>0?tVendas/tNVendas:0;
+
+    const gColor = gPct>=100?'var(--pos-color)':gPct>=70?'var(--accent4)':'var(--neg-color)';
+    return `<div class="kpi-grid" style="margin-bottom:1.75rem">
+      <div class="kpi kpi-a"><label>Faturado Grupo</label><div class="kpi-val">${fmtR(grupoFat)}</div><div class="kpi-sub">de ${fmtR(grupoMeta)} de meta</div></div>
+      <div class="kpi" style="border:1px solid var(--border);border-radius:12px;padding:1.25rem 1.5rem;background:var(--card)"><label style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.12em;display:block;margin-bottom:0.5rem">% Meta Grupo</label><div class="kpi-val" style="color:${gColor}">${gPct.toFixed(1)}%</div><div class="kpi-sub">${lojasOk} de ${lojas.length} lojas bateram a meta</div></div>
+      <div class="kpi kpi-c"><label>PA Grupo</label><div class="kpi-val">${paGrupo.toFixed(2)}</div><div class="kpi-sub">Peças por atendimento</div></div>
+      <div class="kpi kpi-d"><label>TM Grupo</label><div class="kpi-val">${fmtR(tmGrupo)}</div><div class="kpi-sub">Ticket médio</div></div>
+    </div>`;
+  }
+
+  container.innerHTML =
+    buildKPIstrip() +
+    buildMetaSection() +
+    buildComparadasSection() +
+    buildPATMSection() +
+    buildComparadasPecasSection();
+}
 
 </script>
-</body>
-</html>
