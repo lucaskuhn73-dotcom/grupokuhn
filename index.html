@@ -3578,21 +3578,37 @@ function renderFechamento() {
     const CATS = ["OC","RE","CG","LE","Aces"];
     const CAT_NAMES = {"OC":"Óculos","RE":"Relógio","CG":"C. Grau","LE":"Lentes","Aces":"Acessórios"};
 
-    // Agrega por loja e categoria (igual à lógica da aba termômetro)
     const dadosGrupo = {};
     lojas.forEach(l => { dadosGrupo[l] = {}; });
 
-    CATS.forEach(cat => {
-      (termometrosData[cat]||[]).slice(1).forEach(row => {
-        const nome = String(row[1]||"").trim();
-        const qtde = parseInt(String(row[2]||"0").replace(/[^\d]/g,""))||0;
-        if(!nome || qtde<=0) return;
-        const l = lojaDoVendedor(nome);
-        if(!l || !lojas.includes(l)) return;
-        if(!dadosGrupo[l][cat]) dadosGrupo[l][cat] = 0;
-        dadosGrupo[l][cat] += qtde;
+    const temTermometro = CATS.some(c => termometrosData[c]&&termometrosData[c].length>1);
+
+    if(temTermometro) {
+      // Dados reais do Sheets
+      CATS.forEach(cat => {
+        (termometrosData[cat]||[]).slice(1).forEach(row => {
+          const nome = String(row[1]||"").trim();
+          const qtde = parseInt(String(row[2]||"0").replace(/[^\d]/g,""))||0;
+          if(!nome || qtde<=0) return;
+          const l = lojaDoVendedor(nome);
+          if(!l || !lojas.includes(l)) return;
+          if(!dadosGrupo[l][cat]) dadosGrupo[l][cat] = 0;
+          dadosGrupo[l][cat] += qtde;
+        });
       });
-    });
+    } else if(isDemo) {
+      // Fallback demo: distribui peças proporcionalmente por categoria
+      const CAT_PESOS = {"OC":0.40,"RE":0.10,"CG":0.25,"LE":0.15,"Aces":0.10};
+      lojas.forEach(loja => {
+        const pecasLoja = allData.filter(d=>d.loja===loja).reduce((s,d)=>s+(d.pecas||0),0);
+        CATS.forEach(cat => { dadosGrupo[loja][cat] = Math.round(pecasLoja * CAT_PESOS[cat]); });
+      });
+    } else {
+      return `<div class="card fech-section">
+        <div class="fech-section-title">🌡️ Comparadas de Peças (Termômetro)</div>
+        <p style="color:var(--muted);font-size:0.72rem">Sem dados de termômetro carregados.</p>
+      </div>`;
+    }
 
     let grupoTotais = {}; CATS.forEach(c => { grupoTotais[c]=0; }); let grupoTotal=0;
 
@@ -3604,7 +3620,7 @@ function renderFechamento() {
       if(!total) return "";
       return `<tr>
         <td style="font-weight:700;color:${cor}">${loja}</td>
-        ${vals.map((v,i)=>`<td style="color:${v>0?'var(--text)':'var(--muted)'}">${v>0?v:"—"}</td>`).join("")}
+        ${vals.map(v=>`<td style="color:${v>0?'var(--text)':'var(--muted)'}">${v>0?v:"—"}</td>`).join("")}
         <td style="font-weight:700">${total}</td>
       </tr>`;
     }).join("");
@@ -3615,24 +3631,8 @@ function renderFechamento() {
       <td style="font-weight:800">${grupoTotal}</td>
     </tr>`;
 
-    const temTermometro = CATS.some(c => termometrosData[c]&&termometrosData[c].length>1);
-
-    // Demo fallback: distribui as peças do allData pelas categorias de forma proporcional simulada
-    if(!temTermometro && isDemo) {
-      const CAT_PESOS = {"OC":0.40,"RE":0.10,"CG":0.25,"LE":0.15,"Aces":0.10};
-      lojas.forEach(loja => {
-        const pecasLoja = allData.filter(d=>d.loja===loja).reduce((s,d)=>s+(d.pecas||0),0);
-        CATS.forEach(cat => { dadosGrupo[loja][cat] = Math.round(pecasLoja * CAT_PESOS[cat]); });
-      });
-    }
-
-    if(!temTermometro && !isDemo) return `<div class="card fech-section">
-      <div class="fech-section-title">🌡️ Comparadas de Peças (Termômetro)</div>
-      <p style="color:var(--muted);font-size:0.72rem">Sem dados de termômetro carregados.</p>
-    </div>`;
-
     return `<div class="card fech-section">
-      <div class="fech-section-title">🌡️ Comparadas de Peças por Categoria</div>
+      <div class="fech-section-title">🌡️ Comparadas de Peças por Categoria${isDemo&&!temTermometro?' <span style="font-size:0.6rem;font-weight:400;color:var(--muted)">(estimado)</span>':''}</div>
       <div style="overflow-x:auto">
         <table class="fech-table">
           <thead><tr>
