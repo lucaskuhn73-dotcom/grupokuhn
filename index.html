@@ -1600,6 +1600,7 @@ function parseBase(rows) {
       let nomeCat = colB.replace(/\s*\(\d+\)\s*$/, "").trim();
       if(!nomeCat) return;
       if(nomeCat === "LENTES VISTA") nomeCat = "LENTES";
+      if(nomeCat === "MULTI LENTE")  nomeCat = "GRAU";   // (25) soma com GRAU (22)
       const qtde = toNum(row[2]); const valor = toNum(row[3]);
       const existing = result[lojaAtual].categorias.find(c => c.nome === nomeCat);
       if(existing) { existing.qtde += qtde; existing.valor += valor; }
@@ -3580,11 +3581,11 @@ function renderFechamento() {
   // função de match categoria nome → sigla
   function matchCat(nomeCat) {
     var n = nomeCat.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-    if (n.includes("OCULOS")||n==="OC")   return "OC";
-    if (n.includes("RELOGIO")||n==="RE")  return "RE";
-    if (n.includes("GRAU")||n==="CG")     return "CG";
-    if (n.includes("LENTE")||n==="LE")    return "LE";
-    if (n.includes("ACESSOR")||n.includes("ACES")||n==="AC") return "Aces";
+    if (n==="OCULOS"||n.includes("OCULOS")||n==="OC")          return "OC";
+    if (n==="RELOGIOS"||n==="RELOGIO"||n.includes("RELOGIO")||n==="RE") return "RE";
+    if (n==="GRAU"||n==="MULTI LENTE"||n.includes("GRAU")||n==="CG")   return "CG";
+    if (n==="LENTES"||n==="LENTES VISTA"||n.includes("LENTE")||n==="LE") return "LE";
+    if (n.includes("ACESSOR")||n.includes("ACES")||n==="AC")   return "Aces";
     return null;
   }
 
