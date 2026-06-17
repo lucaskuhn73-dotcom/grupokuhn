@@ -58,13 +58,58 @@
                radial-gradient(ellipse 60% 50% at 100% 100%,rgba(167,139,250,0.04) 0%,transparent 55%);
     pointer-events:none;z-index:0;transition:opacity 0.3s;}
   html.light body::before{opacity:0;}
-  .wrap{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:2rem;}
 
-  /* HEADER */
-  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border);}
-  .brand h1{font-family:'Inter',sans-serif;font-size:1.75rem;font-weight:800;letter-spacing:-0.04em;color:var(--text);}
-  .brand h1 em{color:var(--accent);font-style:normal;}
-  .brand span{font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.15em;display:block;margin-top:0.3rem;}
+  /* ── SIDEBAR: oculta em todos os tamanhos ── */
+  .sidebar{display:none!important;}
+
+  /* ── MAIN CONTENT ── */
+  .main-content{padding:1.25rem 1.5rem 5.5rem;position:relative;z-index:1;max-width:1440px;margin:0 auto;}
+  .wrap{position:relative;z-index:1;width:100%;}
+
+  /* ── TOP BAR ── */
+  .top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;gap:0.75rem;flex-wrap:wrap;}
+  .top-bar-actions{display:flex;align-items:center;gap:0.5rem;}
+  .grupo-bar{display:flex;gap:0.3rem;padding:0.3rem;background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow);}
+  .grupo-btn{padding:0.38rem 0.9rem;font-size:0.7rem;}
+
+  /* ── BOTTOM NAV ── */
+  .bottom-nav{
+    display:flex;
+    position:fixed;bottom:0;left:0;right:0;
+    background:var(--card);border-top:1px solid var(--border);
+    z-index:200;padding:0.3rem 0 calc(0.3rem + env(safe-area-inset-bottom));
+    box-shadow:0 -4px 20px rgba(0,0,0,0.15);
+  }
+  html.light .bottom-nav{box-shadow:0 -2px 12px rgba(0,0,0,0.08);}
+  .bottom-nav-item{
+    flex:1;display:flex;flex-direction:column;align-items:center;gap:0.15rem;
+    font-size:0.58rem;font-weight:600;color:var(--muted);
+    cursor:pointer;border:none;background:transparent;
+    padding:0.4rem 0.25rem;text-transform:uppercase;letter-spacing:0.05em;
+    transition:color 0.15s;
+  }
+  .bottom-nav-item .bn-icon{font-size:1.2rem;line-height:1;}
+  .bottom-nav-item.active{color:var(--accent);}
+  .bottom-nav-item[data-tab="fechamento"].active{color:#f59e0b;}
+  .bottom-nav-item[data-tab="indicadores"].active{color:var(--accent);}
+  .bottom-nav-item[data-tab="curva"].active{color:#34d399;}
+  .bottom-nav-item[data-tab="resumo"].active{color:var(--accent3);}
+  .bottom-nav-item[data-tab="comparadas"].active{color:#60a5fa;}
+  .bottom-nav-item[data-tab="dezena"].active{color:#f472b6;}
+  .bottom-nav-item[data-tab="termometro"].active{color:#fb923c;}
+  .bottom-nav-item[data-tab="lentes"].active{color:#34d399;}
+
+  /* ── PAINEL "MAIS" ── */
+  .bottom-nav-more-panel{
+    position:fixed;bottom:calc(56px + env(safe-area-inset-bottom));left:0;right:0;
+    background:var(--card);border-top:1px solid var(--border);z-index:199;
+    padding:0.75rem 1rem;display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem;
+    box-shadow:0 -4px 20px rgba(0,0,0,0.15);
+  }
+  .bottom-nav-more-panel.hidden{display:none!important;}
+
+  /* esconde elementos legados */
+  header,.tab-nav,.upload-section{display:none!important;}
   .badge-live{padding:0.35rem 0.75rem;border-radius:999px;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(0,255,224,0.1);color:var(--accent);border:1px solid rgba(0,255,224,0.25);}
   html.light .badge-live{background:rgba(0,119,204,0.08);color:var(--accent);border-color:rgba(0,119,204,0.2);}
   .badge-live::before{content:'● ';}
@@ -388,9 +433,67 @@
   html.light .btn-modal-gerar{border-color:rgba(180,60,140,0.4);background:rgba(180,60,140,0.07);color:#b43c8c;}
   .btn-modal-gerar:hover{background:rgba(244,114,182,0.22);}
   .btn-modal-gerar:disabled{opacity:0.4;cursor:not-allowed;}
+
+  /* ── responsive geral ── */
+  @media(max-width:768px){
+    .main-content{padding:0.75rem 0.85rem 5.5rem;}
+    .kpi-grid{grid-template-columns:1fr 1fr!important;gap:0.5rem;}
+    .kpi{padding:0.75rem;}
+    .kpi-val{font-size:1.2rem;}
+    .main-grid{grid-template-columns:1fr;}
+    .bottom-grid{grid-template-columns:1fr;}
+    .card{padding:0.85rem;}
+    .store-grid{grid-template-columns:1fr;}
+    .resumo-vend-grid{grid-template-columns:1fr;}
+    .chart-wrap{height:180px;}
+    .sub-tab-nav{width:100%;}
+    .sub-tab-btn{flex:1;text-align:center;font-size:0.62rem;padding:0.4rem 0.5rem;}
+  }
+  @media(max-width:480px){
+    .kpi-grid{grid-template-columns:1fr 1fr!important;}
+  }
 </style>
 </head>
 <body>
+
+<!-- ══ SIDEBAR ══════════════════════════════════════════ -->
+<!-- ══ BOTTOM NAV (mobile) ═══════════════════════════════ -->
+<nav class="bottom-nav" id="bottom-nav">
+  <button class="bottom-nav-item active" data-tab="fechamento" onclick="switchTab('fechamento',this)">
+    <span class="bn-icon">🏁</span>Fechamento
+  </button>
+  <button class="bottom-nav-item" data-tab="indicadores" onclick="switchTab('indicadores',this)">
+    <span class="bn-icon">📊</span>Indicadores
+  </button>
+  <button class="bottom-nav-item" data-tab="curva" onclick="switchTab('curva',this)">
+    <span class="bn-icon">📈</span>Curva
+  </button>
+  <button class="bottom-nav-item" data-tab="resumo" onclick="switchTab('resumo',this)">
+    <span class="bn-icon">📋</span>Resumo
+  </button>
+  <button class="bottom-nav-item" onclick="toggleMorePanel(this)">
+    <span class="bn-icon">⋯</span>Mais
+  </button>
+</nav>
+
+<!-- painel "mais" -->
+<div class="bottom-nav-more-panel hidden" id="more-panel">
+  <button class="bottom-nav-item" data-tab="comparadas" onclick="switchTab('comparadas',this);closeMorePanel()">
+    <span class="bn-icon">🔀</span>Comparadas
+  </button>
+  <button class="bottom-nav-item" data-tab="dezena" onclick="switchTab('dezena',this);closeMorePanel()">
+    <span class="bn-icon">🗓️</span>Dezena
+  </button>
+  <button class="bottom-nav-item" data-tab="termometro" onclick="switchTab('termometro',this);closeMorePanel()">
+    <span class="bn-icon">🌡️</span>Termômetro
+  </button>
+  <button class="bottom-nav-item" data-tab="lentes" onclick="switchTab('lentes',this);closeMorePanel()">
+    <span class="bn-icon">👁️</span>Lentes
+  </button>
+</div>
+
+<!-- ══ MAIN ═══════════════════════════════════════════════ -->
+<div class="main-content">
 <div class="wrap">
 
 <!-- MODAL RELATÓRIO -->
@@ -412,81 +515,45 @@
   </div>
 </div>
 
-  <!-- HEADER -->
-  <header>
-    <div class="brand" style="display:flex;align-items:center;gap:1.25rem;">
-      <img src="data:image/png;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QBMRXhpZgAATU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAC1KADAAQAAAABAAABmQAAAAD/7QA4UGhvdG9zaG9wIDMuMAA4QklNBAQAAAAAAAA4QklNBCUAAAAAABDUHYzZjwCyBOmACZjs+EJ+/8AAEQgBmQLUAwEiAAIRAQMRAf/EAB8AAAEFAQEBAQEBAAAAAAAAAAABAgMEBQYHCAkKC//EALUQAAIBAwMCBAMFBQQEAAABfQECAwAEEQUSITFBBhNRYQcicRQygZGhCCNCscEVUtHwJDNicoIJChYXGBkaJSYnKCkqNDU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6g4SFhoeIiYqSk5SVlpeYmZqio6Slpqeoqaqys7S1tre4ubrCw8TFxsfIycrS09TV1tfY2drh4uPk5ebn6Onq8fLz9PX29/j5+v/EAB8BAAMBAQEBAQEBAQEAAAAAAAABAgMEBQYHCAkKC//EALURAAIBAgQEAwQHBQQEAAECdwABAgMRBAUhMQYSQVEHYXETIjKBCBRCkaGxwQkjM1LwFWJy0QoWJDThJfEXGBkaJicoKSo1Njc4OTpDREVGR0hJSlNUVVZXWFlaY2RlZmdoaWpzdHV2d3h5eoKDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uLj5OXm5+jp6vLz9PX29/j5+v/bAEMAAQEBAQEBAgEBAgMCAgIDBAMDAwMEBgQEBAQEBgcGBgYGBgYHBwcHBwcHBwgICAgICAkJCQkJCwsLCwsLCwsLC//bAEMBAgICAwMDBQMDBQsIBggLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLC//dAAQALv/aAAwDAQACEQMRAD8A/v4ooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooA/9D+/iiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAoor5V/a2/a2+HP7I/w4k8Y+MHF1qd0Gj0vS42AmvJgPx2xrkGSQjCjgZYqpwxOJpYelKtWlaK1bZ1YLBV8XXhhsNBynJ2SX9fe9kQ/td/td/Dn9kT4cP4w8XOLvVLsNHpelxsBNdzAfjtjXIMkhGFHAyxVT7h8JfFWoeOvhX4Z8b6siR3es6VZX0yxAhBJcQpIwUEk4BY4yTxX8O/x7+PHxG/aL+I178Tfibem6vro7Y0XiG3hBOyKJcnbGueB1JySSxJP9sH7N3P7O/gI/wDUuaX/AOk0dfK8P8AEM8zxtflVqUUuVdd3q/N9uh+gcY8GU8iyvCOb5q85PnfRaK0V5Lvu35WS9oooor7E/NQooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigD/9H+/iiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiivl79q79q74dfsm/DmTxn4ykFzqFyGj0zTI2AmvJgOg67UXIMjkEKPViqnHEYmlQpSrVpWjHVtnTg8HWxdaGHw8HKcnZJdf679NyP9rH9rH4dfslfDmTxl4xcXOo3IaPTNMjYCa7mA6DrtjXIMjkYUerFVP8AHV8fvj18Rf2iviLe/Ez4mXhur66O2ONciG2hUnZFEuTtRc8dyckksSTc+Pvx6+In7RfxEvPiZ8S7w3N7cnbFEuRDbQAnbFEpztRc/UnJJLEk+CTyZNfhnEnE1XNKvJDSjF6Lv5vz7Lp97f8AU/A/BFDJKPtatpYiS96Xb+7Hy7vq/KyVSaTAzX95f7Nv/Ju3gH/sXNK/9Jo6/gonk7V/et+zYc/s6eAT/wBS5pX/AKSx19L4dq1av6L82fKeNS/2TB/4pfkj2qiiiv1Q/noKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooA//9L+/iiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAr8of+CoH/AAVM039lCzbwB8Llt9V+IF3B5jFyHt9LjkHyyTKCN0rD5oo+MfecEBQ3r/7a37YfgX9kP4ZP4u8TH7XrF+Xt9G0pGxLeXA74OQsUf8Ay0lIwAcDLMqn8gv2Cv8Agnh4r/aa8Qj9of8AaVWXUtFup2ure0uXJl1e4ByJJsHKwRnlFGN5G5v7p+T4h4ijg6kMBgbSxM9Umrxpr+ZrvdaJHs5LlftsNPG4pyjhYaadZ/3V5d30PoH9hH9gTxt+1F4wX49/tUy3Oq6LPcC9is7uRmm1e5J3CeYNwIFPKxnBb7zdNp/e3Q/DWgeGNKg0Lw3YW+n2FquyG2to1iijX0VFAAHsBWb4H8B+DPhp4atfBvw/wBLtdG0mybZBaWcSxRID6BQMk9yck9ya66vrstyvD5dh1h8NHVL3m927tvzf9aI+Kzjia+PxUsbibxlKyUI7RVkrJd/6b3Ciiiusz5MKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigD/9P+/iiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAr8pf+CqhAH7KOf+qpeHv5XV3X6tV+Uv8AwVUGf2Vf+6peHv5XV1X6tVLOeW7CiiikSFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQB/9T+/iiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAr8pf+Cqhz+yrj/qZdA/9KmFfq1X5S/8ABVTj9lbH/Uy6B/6VMKJ7FU90+Iv+Deb/AJSBa3/2JGp/+lljX9I1fy7f8G7//KQLWv8AsR9T/wDSyxr+omqe5FXc/mc/4Lyf8pV/iL/2B/Dv/phtKP8AgnL/AMpV/h1/2GNe/wDSa8o/4Lyf8pV/iL/2B/Dv/phtKP8AgnL/AMpV/h1/2GNe/wDSa8q0RL4T+qeiiisDnCiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooA/9X+/iiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAr8pf+Cqn/ACaxj/qZtB/9KWr9Wq/KX/gqp/yaxj/qZtB/9KWqnsVHc/J7/g3b/wCUhGtf9ift3/pba1/ULRRS2IqH8zf/AAXj/wCUnfxC/wCvLRv/AEjgp3/BOX/lKv8ADv8A7DGvf+k15Tf+C8f/ACk7+IX/AF5aN/6RwVd/4Jyf8pWPh1/2F9f/APSa8qnuiXufrj/wdQ/8vv8AzgX/ANjZX8kFf1v/APB1D/y+/wDOBf8A2NlfyQUQ2G9j+xv/AIN2P+TDL/8A7H3Wf/SCwr94K/B//g3Y/wCTDL//ALE3Wf8A0gsK/eCiW5K3CiiipAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKAP/9b+/iiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAr8pf+Cqn/ACax/wDYy6D/AOlLV+rVflL/AMFVf+TV/wDs5eB//Ty9E9iqe6Pye/4N2/8AlINrf/YnX3/pTbV/ULRRS2IqH8zf/BeP/lJ18Qv+vLRv/SOCnf8ABOf/AJSsfDr/ALC+v/8ApNeUz/gvH/yk6+IX/Xlo3/pHBV3/AIJyf8pWPh1/2F9f/wDSa8qnuiXufrh/wdQ/8vv/ADgX/wBjZX8kFf1v/wDB1D/y+/8AOBf/AGNlfyQUQ2G9j+xv/g3Y/wCTDL//ALE3Wf8A0gsK/eCvwf8A+Ddj/kwu/wD+x91n/wBILCv3gpvcluwtFFFIkKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKAP/1/7+KKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACvyl/4KqH/jFjH/AFM2g/8ApS1fq1X5S/8ABVQf8Ysf9jLoP/pS1VPYqO5+T3/Bu3/ykG1v/sTr7/0ptq/qFoopbEVD+Zv/AILx/wDKTr4hf9eWjf8ApHBTv+Cc/wDylY+HX/YX1/8A9JryznP/AAXj/wCUnXxC/wCvLRv/AEjgrQ/4Jzn/AJSs/Dr/ALC+v/8ApNeVT3RL3P1x/wCDqH/l9/5wL/7GyvzH/wCCHP8AycD41/7Env8A9Ir2v04/4OpT/wAvv/OBf/Y2V+Y3/BDj/k4Hxp/2JPf/AKQ3tKO5UNlY/sgooor1DxQooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKAP/Q/v4ooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAK/KX/AIKqf8msf9jLoP8A6UtX6tV+Uv8AwVUH/GLH/Yy6D/6UtVT2KjufnF/wbrH/AJSBa1/2I97/AOlNtX9Q1FFLYioFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQB//0f7+KKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooA/9L+/iiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigD/2Q==" alt="Grupo Kuhn" style="height:52px;width:auto;object-fit:contain;">
-      <div style="display:flex;flex-direction:column;justify-content:center;">
-        <span style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.15em;margin-top:0.2rem;">Dashboard de Indicadores de Vendas</span>
-      </div>
-    </div>
-    <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
-      <button class="btn-relatorio" onclick="abrirModalRelatorio()">📄 Relatório PDF</button>
-      <button class="btn-theme" id="btn-theme" onclick="toggleTheme()" title="Alternar tema claro/escuro">
-        <span class="theme-icon" id="theme-icon">☀️</span>
-        <span id="theme-label">Tema Claro</span>
-      </button>
-      <button class="btn-tv" id="btn-tv" onclick="toggleTVMode()" title="Modo TV — rotação automática de abas">📺 Modo TV</button>
-      <span class="badge-live" id="badge-live">Dados Carregados</span>
-      <span style="padding:0.35rem 0.75rem;border-radius:999px;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(167,139,250,0.1);color:var(--accent3);border:1px solid rgba(167,139,250,0.25);">V4</span>
-    </div>
-  </header>
-
-  <!-- UPLOAD -->
-  <div class="upload-section">
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
-      <div>
-        <p><strong>🔗 Conectado à sua planilha Google Sheets</strong></p>
-        <p id="status-msg" style="margin-top:0.25rem">Clique em "Atualizar" para buscar os dados mais recentes.</p>
-      </div>
-      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;">
-        <button class="btn btn-refresh" id="btn-refresh" onclick="loadFromSheets()">🔄 Atualizar Dados</button>
-        <button class="btn" style="background:rgba(255,255,255,0.04);color:var(--muted);border-color:var(--border)" onclick="document.getElementById('fileInput').click()">📂 Upload CSV</button>
-        <input type="file" id="fileInput" accept=".csv,.tsv,.txt" onchange="loadFromFile(event)" style="display:none">
-      </div>
-    </div>
-    <div id="progress-bar" style="height:2px;background:var(--border);border-radius:999px;overflow:hidden;display:none;">
-      <div id="progress-fill" style="height:100%;width:0%;background:var(--accent);transition:width 0.4s ease;border-radius:999px;"></div>
-    </div>
-  </div>
-
-  <!-- GRUPO SELECTOR -->
-  <div class="grupo-bar" id="grupoBar">
+<!-- TOP BAR -->
+<div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:nowrap;overflow-x:auto;margin-bottom:1.5rem;position:relative;z-index:10;padding-bottom:2px;">
+  <div class="grupo-bar" id="grupoBar" style="flex-shrink:0">
     <button class="grupo-btn active-all" onclick="setGrupo('TODAS',this)">🏪 Todas</button>
     <button class="grupo-btn" onclick="setGrupo('VERMELHAS',this)">🔴 Vermelhas</button>
     <button class="grupo-btn" onclick="setGrupo('OTICAS',this)">👓 Óticas</button>
   </div>
-
-  <!-- TAB NAV -->
-  <div class="tab-nav">
-    <button class="tab-btn active" data-tab="indicadores" onclick="switchTab('indicadores',this)">
-      <span class="tab-icon">📊</span> Indicadores
-    </button>
-    <button class="tab-btn" data-tab="curva" onclick="switchTab('curva',this)">
-      <span class="tab-icon">📈</span> Curva de Venda
-    </button>
-    <button class="tab-btn" data-tab="resumo" onclick="switchTab('resumo',this)">
-      <span class="tab-icon">📋</span> Resumo
-    </button>
-    <button class="tab-btn" data-tab="comparadas" onclick="switchTab('comparadas',this)">
-      <span class="tab-icon">🔀</span> Comparadas Peças
-    </button>
-    <button class="tab-btn" data-tab="dezena" onclick="switchTab('dezena',this)">
-      <span class="tab-icon">🗓️</span> Resumo Dezena
-    </button>
-    <button class="tab-btn" data-tab="termometro" onclick="switchTab('termometro',this)">
-      <span class="tab-icon">🌡️</span> Termômetro Peças
-    </button>
-    <button class="tab-btn" data-tab="lentes" onclick="switchTab('lentes',this)">
-      <span class="tab-icon">👁️</span> Lentes
-    </button>
-    <button class="tab-btn" data-tab="fechamento" onclick="switchTab('fechamento',this)">
-      <span class="tab-icon">🏁</span> Fechamento
-    </button>
+  <button class="btn btn-refresh" id="btn-refresh" onclick="loadFromSheets()" style="flex-shrink:0">🔄 Atualizar</button>
+  <button class="btn-theme" id="btn-theme" onclick="toggleTheme()" style="flex-shrink:0">
+    <span class="theme-icon" id="theme-icon">☀️</span>
+    <span id="theme-label">Claro</span>
+  </button>
+  <button class="btn-relatorio" onclick="abrirModalRelatorio()" style="flex-shrink:0">📄 PDF</button>
+  <button class="btn-tv" id="btn-tv" onclick="toggleTVMode()" style="flex-shrink:0">📺 TV</button>
+  <button class="btn" style="background:rgba(255,255,255,0.04);color:var(--muted);border-color:var(--border);font-size:0.68rem;flex-shrink:0" onclick="document.getElementById('fileInput').click()">📂 CSV</button>
+  <input type="file" id="fileInput" accept=".csv,.tsv,.txt" onchange="loadFromFile(event)" style="display:none">
+  <span class="badge-live" id="badge-live" style="flex-shrink:0;margin-left:auto">Carregando</span>
+  <div id="progress-bar" style="height:2px;background:var(--border);border-radius:999px;overflow:hidden;display:none;position:absolute;bottom:0;left:0;right:0;">
+    <div id="progress-fill" style="height:100%;width:0%;background:var(--accent);transition:width 0.4s ease;border-radius:999px;"></div>
   </div>
+</div>
+
+<!-- elementos legados que o JS espera encontrar (ocultos) -->
+<p id="status-msg" style="display:none"></p>
+<header style="display:none"><div class="brand"></div></header>
+<div class="upload-section" style="display:none"></div>
+<div class="tab-nav" style="display:none">
+  <button class="tab-btn" data-tab="indicadores"></button>
+  <button class="tab-btn" data-tab="curva"></button>
+  <button class="tab-btn" data-tab="resumo"></button>
+  <button class="tab-btn" data-tab="comparadas"></button>
+  <button class="tab-btn" data-tab="dezena"></button>
+  <button class="tab-btn" data-tab="termometro"></button>
+  <button class="tab-btn" data-tab="lentes"></button>
+  <button class="tab-btn" data-tab="fechamento"></button>
+</div>
 
   <!-- ========== ABA INDICADORES (Vendas + PA + TM unificado) ========== -->
-  <div class="tab-panel active" data-panel="indicadores" id="panel-indicadores">
+  <div class="tab-panel" data-panel="indicadores" id="panel-indicadores">
 
     <!-- FILTRO DE LOJA + TOGGLE GERENTES -->
     <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;">
@@ -644,14 +711,7 @@
   </div>
 
   <!-- ========== ABA FECHAMENTO ========== -->
-  <div class="tab-panel" data-panel="fechamento" id="panel-fechamento">
-    <!-- Filtro de Grupo específico para Fechamento -->
-    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;margin-bottom:1.75rem;">
-      <span style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">Grupo:</span>
-      <button class="filter-btn active" id="fech-btn-todas" onclick="setFechGrupo('TODAS',this)">🏪 Todas</button>
-      <button class="filter-btn" id="fech-btn-verm" onclick="setFechGrupo('VERMELHAS',this)">🔴 Vermelhas</button>
-      <button class="filter-btn" id="fech-btn-otica" onclick="setFechGrupo('OTICAS',this)">👓 Óticas</button>
-    </div>
+  <div class="tab-panel active" data-panel="fechamento" id="panel-fechamento">
     <div id="fechamento-content"><p style="color:var(--muted);padding:2rem">Clique em 🔄 Atualizar Dados para carregar.</p></div>
   </div>
 
@@ -995,12 +1055,14 @@ function setFilterInd(store, btn) {
 }
 
 // ===== TAB SWITCH =====
-let activeTab = "indicadores";
+let activeTab = "fechamento";
 function switchTab(tab, btn) {
-  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+  document.querySelectorAll(".nav-item").forEach(b=>b.classList.remove("active"));
+  document.querySelectorAll(".bottom-nav-item[data-tab]").forEach(b=>b.classList.remove("active"));
   document.querySelectorAll(".tab-panel").forEach(p=>p.classList.remove("active"));
-  btn.classList.add("active");
-  document.getElementById(`panel-${tab}`).classList.add("active");
+  document.querySelectorAll(".nav-item[data-tab='"+tab+"']").forEach(b=>b.classList.add("active"));
+  document.querySelectorAll(".bottom-nav-item[data-tab='"+tab+"']").forEach(b=>b.classList.add("active"));
+  document.getElementById("panel-"+tab).classList.add("active");
   activeTab = tab;
   setTimeout(()=>{
     if(tab==="indicadores") { renderVendas(); renderPA(); renderTM(); }
@@ -2144,8 +2206,9 @@ function setGrupo(g, btn) {
   const cls = g==="TODAS"?"active-all":g==="VERMELHAS"?"active-verm":g==="OTICAS"?"active-otica":"active-acium";
   btn.classList.add(cls);
   filters.indicadores = "TODAS";
+  fechGrupoAtivo = g;
   buildFilters();
-  renderVendas(); renderPA(); renderTM(); renderCurva(); renderResumo(); renderComparadas(); renderDezena(); renderTermometro(); renderLentes();
+  renderVendas(); renderPA(); renderTM(); renderCurva(); renderResumo(); renderComparadas(); renderDezena(); renderTermometro(); renderLentes(); renderFechamento();
 }
 
 // ===== TV MODE =====
@@ -3405,6 +3468,15 @@ function gerarRelatorio() {
 // ===== FECHAMENTO =====
 var fechGrupoAtivo = "TODAS";
 
+function toggleMorePanel(btn) {
+  var p = document.getElementById("more-panel");
+  if(p) p.classList.toggle("hidden");
+}
+function closeMorePanel() {
+  var p = document.getElementById("more-panel");
+  if(p) p.classList.add("hidden");
+}
+
 function setFechGrupo(g, btn) {
   fechGrupoAtivo = g;
   document.querySelectorAll("#panel-fechamento .filter-btn").forEach(b => b.classList.remove("active"));
@@ -3416,294 +3488,221 @@ function renderFechamento() {
   var container = document.getElementById("fechamento-content");
   if (!container) return;
 
-  var LOJAS_ALL = ["ATM","PBA LJR","PBA SHOP","PARAÍSO","TAPAJÓS","OTC PBA","OTC TPJ"];
-  var GMAP = { TODAS:null, VERMELHAS:["ATM","PBA SHOP","PBA LJR","PARAÍSO","TAPAJÓS"], OTICAS:["OTC PBA","OTC TPJ"] };
-  var grupoLojas = GMAP[fechGrupoAtivo] || null;
-  var lojas = LOJAS_ALL.filter(function(l){ return !grupoLojas || grupoLojas.indexOf(l) >= 0; });
+  try {
+    var LOJAS_ALL = ["ATM","PBA LJR","PBA SHOP","PARAÍSO","TAPAJÓS","OTC PBA","OTC TPJ"];
+    var GMAP = { TODAS:null, VERMELHAS:["ATM","PBA SHOP","PBA LJR","PARAÍSO","TAPAJÓS"], OTICAS:["OTC PBA","OTC TPJ"] };
+    var grupoLojas = GMAP[fechGrupoAtivo] || null;
+    var lojas = LOJAS_ALL.filter(function(l){ return !grupoLojas || grupoLojas.indexOf(l) >= 0; });
 
-  if (!allData || !allData.length) {
-    container.innerHTML = '<div style="color:var(--muted);padding:2rem;text-align:center">Clique em 🔄 Atualizar Dados para carregar.</div>';
-    return;
-  }
+    if (!allData || !allData.length) {
+      container.innerHTML = '<div style="color:var(--muted);padding:2rem;text-align:center">Clique em 🔄 Atualizar para carregar.</div>';
+      return;
+    }
 
-  var isDemo = !baseAtualData.length && !baseAnteriorData.length;
+    var isDemo = !baseAtualData.length && !baseAnteriorData.length;
 
-  function buildDemoBase(fator) {
-    var result = {};
-    allData.forEach(function(d) {
-      if (!d.loja || d.loja === "—") return;
-      if (!result[d.loja]) result[d.loja] = { total_qtde:0, total_valor:0, categorias:[] };
-      result[d.loja].total_qtde  += Math.round((d.pecas  || 0) * fator);
-      result[d.loja].total_valor += (d.vendas || 0) * fator;
-    });
-    return result;
-  }
+    // ── bases atual/anterior ──────────────────────────────
+    var atualEfetivo, anteriorEfetivo;
+    if (isDemo) {
+      atualEfetivo = {}; anteriorEfetivo = {};
+      allData.forEach(function(d) {
+        if (!d.loja || d.loja==="—") return;
+        if (!atualEfetivo[d.loja])    atualEfetivo[d.loja]    = {total_qtde:0,total_valor:0,categorias:[]};
+        if (!anteriorEfetivo[d.loja]) anteriorEfetivo[d.loja] = {total_qtde:0,total_valor:0,categorias:[]};
+        atualEfetivo[d.loja].total_qtde  += d.pecas  ||0;
+        atualEfetivo[d.loja].total_valor += d.vendas ||0;
+        anteriorEfetivo[d.loja].total_qtde  += Math.round((d.pecas  ||0)*0.91);
+        anteriorEfetivo[d.loja].total_valor += (d.vendas||0)*0.91;
+      });
+    } else {
+      atualEfetivo    = parseBase(baseAtualData);
+      anteriorEfetivo = parseBase(baseAnteriorData);
+    }
 
-  var atualEfetivo    = isDemo ? buildDemoBase(1)    : parseBase(baseAtualData);
-  var anteriorEfetivo = isDemo ? buildDemoBase(0.91) : parseBase(baseAnteriorData);
+    // ── match categoria ───────────────────────────────────
+    function matchCat(nome) {
+      var n = nome.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+      if (n==="OCULOS"||n.includes("OCULOS")) return "OC";
+      if (n==="RELOGIOS"||n==="RELOGIO"||n.includes("RELOGIO")) return "RE";
+      if (n==="GRAU"||n==="MULTI LENTE"||n.includes("GRAU")) return "CG";
+      if (n==="LENTES"||n==="LENTES VISTA"||n.includes("LENTE")) return "LE";
+      if (n.includes("ACESSOR")||n.includes("ACES")) return "Aces";
+      return null;
+    }
 
-  // ── % sobre a curva esperada até hoje ──
-  function getPctCurvaLoja(loja) {
-    var entry = Object.entries(CURVA_TO_LOJA).find(function(e){ return e[1]===loja; });
-    if (!entry) return 0;
-    var li = parseInt(entry[0]);
-    var esp = CURVA_RAW.slice(0, HOJE_IDX+1).reduce(function(s,r){ return s+(r.vals[li]||0); }, 0);
-    if (!esp) return 0;
-    var fat = allData.filter(function(d){ return d.loja===loja; }).reduce(function(s,d){ return s+d.vendas; }, 0);
-    return (fat / esp) * 100;
-  }
+    // ── totais grupo ──────────────────────────────────────
+    var grupoFat=0, grupoEsp=0;
+    var grupoQAt=0, grupoQAnt=0, grupoFatAt=0, grupoFatAnt=0;
+    var grupoPpvS=0, grupoPpvC=0, grupoVendas=0, grupoNV=0;
 
-  // ── comparadas YoY faturamento por loja ──
-  function getVarFatLoja(loja) {
-    var a = atualEfetivo[loja]    || { total_valor:0 };
-    var b = anteriorEfetivo[loja] || { total_valor:0 };
-    if (!b.total_valor) return null;
-    return (a.total_valor - b.total_valor) / b.total_valor * 100;
-  }
-
-  // ── PA e TM por loja ──
-  function getPATMLoja(loja) {
-    var pecas=0, vendas=0, nV=0, ppvS=0, ppvC=0;
-    allData.forEach(function(d) {
-      if (d.loja !== loja) return;
-      pecas   += d.pecas  || 0;
-      vendas  += d.vendas || 0;
-      nV      += d.ticket > 0 ? d.vendas/d.ticket : 0;
-      if (d.ppv > 0) { ppvS += d.ppv; ppvC++; }
-    });
-    return {
-      pa: ppvC > 0 ? ppvS/ppvC : (nV>0 ? pecas/nV : 0),
-      tm: nV > 0 ? vendas/nV : 0,
-      fat: vendas, nV: nV
-    };
-  }
-
-  // ── TOTAIS GRUPO ──
-  var grupoFat=0, grupoEsp=0, grupoQAt=0, grupoQAnt=0, grupoFAt=0, grupoFAnt=0;
-  var grupoPpvS=0, grupoPpvC=0, grupoVendas=0, grupoNV=0;
-
-  lojas.forEach(function(loja) {
-    var entry = Object.entries(CURVA_TO_LOJA).find(function(e){ return e[1]===loja; });
-    var li = entry ? parseInt(entry[0]) : -1;
-    var esp = li>=0 ? CURVA_RAW.slice(0, HOJE_IDX+1).reduce(function(s,r){ return s+(r.vals[li]||0); },0) : 0;
-    var fat = allData.filter(function(d){ return d.loja===loja; }).reduce(function(s,d){ return s+d.vendas; },0);
-    grupoFat += fat; grupoEsp += esp;
-    var a = atualEfetivo[loja]    || { total_qtde:0, total_valor:0 };
-    var b = anteriorEfetivo[loja] || { total_qtde:0, total_valor:0 };
-    grupoQAt+=a.total_qtde; grupoQAnt+=b.total_qtde; grupoFAt+=a.total_valor; grupoFAnt+=b.total_valor;
-    allData.filter(function(d){ return d.loja===loja; }).forEach(function(d) {
-      grupoVendas+=d.vendas; grupoNV+=d.ticket>0?d.vendas/d.ticket:0;
-      if(d.ppv>0){grupoPpvS+=d.ppv;grupoPpvC++;}
-    });
-  });
-
-  var gPctCurva = grupoEsp>0 ? (grupoFat/grupoEsp)*100 : 0;
-  var gVarFat   = grupoFAnt>0 ? (grupoFAt-grupoFAnt)/grupoFAnt*100 : 0;
-  var gPA       = grupoPpvC>0 ? grupoPpvS/grupoPpvC : (grupoNV>0?grupoQAt/grupoNV:0); // usa qtde atual
-  var gTM       = grupoNV>0 ? grupoVendas/grupoNV : 0;
-
-  function pctColor(v, ok, warn) { return v>=ok?'var(--pos-color)':v>=warn?'var(--accent4)':'var(--neg-color)'; }
-  function varColor(v) { return v>=0?'var(--pos-color)':'var(--neg-color)'; }
-  function badge(v, suffix) {
-    suffix = suffix||'%';
-    var s = (v>=0?'+':'')+v.toFixed(1)+suffix;
-    var c = varColor(v);
-    return '<span style="color:'+c+';font-weight:700">'+s+'</span>';
-  }
-
-  // ── HEADER com 3 KPIs grandes ──
-  var headerHtml = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5rem;margin-bottom:2rem;">'
-    // % META CURVA
-    + '<div class="card" style="text-align:center;padding:2rem 1rem;">'
-    + '<div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;color:var(--muted);margin-bottom:0.75rem;">🎯 % Meta (Curva)</div>'
-    + '<div style="font-size:3rem;font-weight:900;letter-spacing:-0.04em;color:'+pctColor(gPctCurva,100,70)+'">'+gPctCurva.toFixed(1)+'%</div>'
-    + '<div style="font-size:0.65rem;color:var(--muted);margin-top:0.4rem;">Realizado vs curva esperada hoje</div>'
-    + '</div>'
-    // % COMPARADAS
-    + '<div class="card" style="text-align:center;padding:2rem 1rem;">'
-    + '<div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;color:var(--muted);margin-bottom:0.75rem;">📊 % Comparadas (Fat. YoY)</div>'
-    + '<div style="font-size:3rem;font-weight:900;letter-spacing:-0.04em;color:'+varColor(gVarFat)+'">'+(gVarFat>=0?'+':'')+gVarFat.toFixed(1)+'%</div>'
-    + '<div style="font-size:0.65rem;color:var(--muted);margin-top:0.4rem;">Faturamento vs ano anterior</div>'
-    + '</div>'
-    // PA e TM
-    + '<div class="card" style="text-align:center;padding:2rem 1rem;">'
-    + '<div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;color:var(--muted);margin-bottom:0.75rem;">📦 PA &amp; TM — Grupo</div>'
-    + '<div style="display:flex;justify-content:center;align-items:baseline;gap:1.5rem;margin-top:0.25rem;">'
-    + '<div><div style="font-size:2.2rem;font-weight:900;color:'+pctColor(gPA,2,1.5)+'">'+gPA.toFixed(2)+'</div><div style="font-size:0.6rem;color:var(--muted)">PA</div></div>'
-    + '<div style="width:1px;height:40px;background:var(--border)"></div>'
-    + '<div><div style="font-size:2.2rem;font-weight:900;color:'+pctColor(gTM,500,300)+'">'+fmtR(gTM)+'</div><div style="font-size:0.6rem;color:var(--muted)">TM</div></div>'
-    + '</div></div>'
-    + '</div>';
-
-  // ── CATEGORIAS (peças por cat) ──
-  var CATS = ["OC","RE","CG","LE","Aces"];
-  var CAT_ICONS = {"OC":"👓","RE":"⌚","CG":"🔍","LE":"👁️","Aces":"🛍️"};
-  var CAT_NAMES = {"OC":"Óculos","RE":"Relógio","CG":"C. Grau","LE":"Lentes","Aces":"Acess."};
-  var dadosCat = {};
-  lojas.forEach(function(l){ dadosCat[l]={}; CATS.forEach(function(c){ dadosCat[l][c]=0; }); });
-  var temTermometro = CATS.some(function(c){ return termometrosData[c]&&termometrosData[c].length>1; });
-  if (temTermometro) {
-    CATS.forEach(function(cat) {
-      (termometrosData[cat]||[]).slice(1).forEach(function(row) {
-        var nome=String(row[1]||"").trim(), qtde=parseInt(String(row[2]||"0").replace(/[^\d]/g,""))||0;
-        if (!nome||qtde<=0) return;
-        var l=lojaDoVendedor(nome);
-        if (!l||lojas.indexOf(l)<0) return;
-        dadosCat[l][cat]=(dadosCat[l][cat]||0)+qtde;
+    lojas.forEach(function(loja) {
+      var entry = Object.entries(CURVA_TO_LOJA).find(function(e){ return e[1]===loja; });
+      var li = entry ? parseInt(entry[0]) : -1;
+      var esp = (li>=0 && CURVA_RAW.length) ? CURVA_RAW.slice(0,HOJE_IDX+1).reduce(function(s,r){return s+(r.vals[li]||0);},0) : 0;
+      var fat = allData.filter(function(d){return d.loja===loja;}).reduce(function(s,d){return s+d.vendas;},0);
+      grupoFat += fat; grupoEsp += esp;
+      var a = atualEfetivo[loja]    || {total_qtde:0,total_valor:0,categorias:[]};
+      var b = anteriorEfetivo[loja] || {total_qtde:0,total_valor:0,categorias:[]};
+      grupoQAt += a.total_qtde; grupoQAnt += b.total_qtde;
+      grupoFatAt += a.total_valor; grupoFatAnt += b.total_valor;
+      allData.filter(function(d){return d.loja===loja;}).forEach(function(d){
+        grupoVendas+=d.vendas; grupoNV+=d.ticket>0?d.vendas/d.ticket:0;
+        if(d.ppv>0){grupoPpvS+=d.ppv;grupoPpvC++;}
       });
     });
-  } else if (isDemo) {
-    var PESOS={"OC":0.40,"RE":0.10,"CG":0.25,"LE":0.15,"Aces":0.10};
+
+    var gPctCurva = grupoEsp>0 ? (grupoFat/grupoEsp)*100 : 0;
+    var gVarFat   = grupoFatAnt>0 ? (grupoFatAt-grupoFatAnt)/grupoFatAnt*100 : 0;
+    var gPA = grupoPpvC>0 ? grupoPpvS/grupoPpvC : (grupoNV>0 ? grupoQAt/grupoNV : 0);
+    var gTM = grupoNV>0 ? grupoVendas/grupoNV : 0;
+
+    // ── helpers ───────────────────────────────────────────
+    function pctColor(v,ok,warn){ return v>=ok?'var(--pos-color)':v>=warn?'var(--accent4)':'var(--neg-color)'; }
+    function varColor(v){ return v>=0?'var(--pos-color)':'var(--neg-color)'; }
+    function varStr(v){ return (v>=0?'+':'')+v.toFixed(1)+'%'; }
+
+    // ── KPIs topo ─────────────────────────────────────────
+    var html = '';
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5rem;margin-bottom:2rem;">';
+    html += '<div class="card" style="text-align:center;padding:2rem 1rem;">'
+      +'<div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;color:var(--muted);margin-bottom:0.75rem;">🎯 % Meta (Curva)</div>'
+      +'<div style="font-size:3rem;font-weight:900;letter-spacing:-0.04em;color:'+pctColor(gPctCurva,100,70)+'">'+gPctCurva.toFixed(1)+'%</div>'
+      +'<div style="font-size:0.65rem;color:var(--muted);margin-top:0.4rem;">Realizado vs curva esperada hoje</div>'
+      +'</div>';
+    html += '<div class="card" style="text-align:center;padding:2rem 1rem;">'
+      +'<div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;color:var(--muted);margin-bottom:0.75rem;">📊 % Comparadas (Fat. YoY)</div>'
+      +'<div style="font-size:3rem;font-weight:900;letter-spacing:-0.04em;color:'+varColor(gVarFat)+'">'+varStr(gVarFat)+'</div>'
+      +'<div style="font-size:0.65rem;color:var(--muted);margin-top:0.4rem;">Faturamento vs ano anterior</div>'
+      +'</div>';
+    html += '<div class="card" style="text-align:center;padding:2rem 1rem;">'
+      +'<div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;color:var(--muted);margin-bottom:0.75rem;">📦 PA &amp; TM — Grupo</div>'
+      +'<div style="display:flex;justify-content:center;align-items:baseline;gap:1.5rem;margin-top:0.5rem;">'
+      +'<div><div style="font-size:2.2rem;font-weight:900;color:'+pctColor(gPA,2,1.5)+'">'+gPA.toFixed(2)+'</div><div style="font-size:0.6rem;color:var(--muted)">PA</div></div>'
+      +'<div style="width:1px;height:40px;background:var(--border)"></div>'
+      +'<div><div style="font-size:2.2rem;font-weight:900;color:'+pctColor(gTM,500,300)+'">'+fmtR(gTM)+'</div><div style="font-size:0.6rem;color:var(--muted)">TM</div></div>'
+      +'</div></div>';
+    html += '</div>';
+
+    // ── categorias ────────────────────────────────────────
+    var CATS = ["OC","RE","CG","LE","Aces"];
+    var CAT_ICONS = {"OC":"👓","RE":"⌚","CG":"🔍","LE":"👁️","Aces":"🛍️"};
+    var CAT_NAMES = {"OC":"Óculos","RE":"Relógio","CG":"C. Grau","LE":"Lentes","Aces":"Acess."};
+    var catAt={}, catAnt={}, catFatAt={}, catFatAnt2={};
+    CATS.forEach(function(c){catAt[c]=0;catAnt[c]=0;catFatAt[c]=0;catFatAnt2[c]=0;});
+
+    var temTerm = CATS.some(function(c){return termometrosData[c]&&termometrosData[c].length>1;});
+    if (temTerm) {
+      CATS.forEach(function(cat){
+        (termometrosData[cat]||[]).slice(1).forEach(function(row){
+          var nome=String(row[1]||"").trim(), qtde=parseInt(String(row[2]||"0").replace(/[^\d]/g,""))||0;
+          if(!nome||qtde<=0) return;
+          var l=lojaDoVendedor(nome);
+          if(!l||lojas.indexOf(l)<0) return;
+          catAt[cat]=(catAt[cat]||0)+qtde;
+        });
+      });
+    }
     lojas.forEach(function(loja){
-      var pecas=allData.filter(function(d){return d.loja===loja;}).reduce(function(s,d){return s+(d.pecas||0);},0);
-      CATS.forEach(function(cat){dadosCat[loja][cat]=Math.round(pecas*PESOS[cat]);});
+      var a=atualEfetivo[loja]||{categorias:[]};
+      var b=anteriorEfetivo[loja]||{categorias:[]};
+      a.categorias.forEach(function(x){ var s=matchCat(x.nome); if(s){catFatAt[s]+=(x.valor||0); if(!temTerm) catAt[s]+=(x.qtde||0);} });
+      b.categorias.forEach(function(x){ var s=matchCat(x.nome); if(s){catFatAnt2[s]+=(x.valor||0); catAnt[s]+=(x.qtde||0);} });
     });
-  }
-  // totais de cat para o grupo
-  var catGrupo={}; CATS.forEach(function(c){catGrupo[c]=0;});
-  if (temTermometro) {
-    lojas.forEach(function(l){ CATS.forEach(function(c){ catGrupo[c]+=(dadosCat[l][c]||0); }); });
-  } else if (!isDemo) {
-    // sem termômetro e dados reais: usa atualEfetivo.categorias
-    lojas.forEach(function(l){
-      var a=atualEfetivo[l]||{categorias:[]};
-      a.categorias.forEach(function(x){
-        var sig=matchCat(x.nome); if(sig) catGrupo[sig]+=(x.qtde||0);
+    if (isDemo && !temTerm) {
+      var PQ={"OC":0.40,"RE":0.10,"CG":0.25,"LE":0.15,"Aces":0.10};
+      var PF={"OC":0.45,"RE":0.08,"CG":0.28,"LE":0.14,"Aces":0.05};
+      CATS.forEach(function(c){
+        catAt[c]=Math.round(grupoQAt*PQ[c]); catAnt[c]=Math.round(grupoQAnt*PQ[c]);
+        catFatAt[c]=grupoFatAt*PF[c]; catFatAnt2[c]=grupoFatAnt*PF[c];
       });
+    }
+
+    html += '<div class="card" style="margin-bottom:1.5rem;">'
+      +'<div class="fech-section-title">🌡️ Crescimento por Categoria — Grupo</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;">';
+    CATS.forEach(function(cat){
+      var qAt=catAt[cat]||0, qAnt=catAnt[cat]||0;
+      var fAt=catFatAt[cat]||0, fAnt=catFatAnt2[cat]||0;
+      var vQ=qAnt>0?(qAt-qAnt)/qAnt*100:0;
+      var vF=fAnt>0?(fAt-fAnt)/fAnt*100:0;
+      html += '<div style="text-align:center;padding:1.25rem 0.5rem;background:var(--card2);border-radius:10px;border:1px solid var(--border);">'
+        +'<div style="font-size:1.5rem;margin-bottom:0.5rem">'+CAT_ICONS[cat]+'</div>'
+        +'<div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:0.75rem">'+CAT_NAMES[cat]+'</div>'
+        +'<div style="display:flex;justify-content:center;gap:0.75rem;">'
+        +'<div><div style="font-size:0.55rem;color:var(--muted);text-transform:uppercase;margin-bottom:0.2rem">Peças</div>'
+        +'<div style="font-size:1.1rem;font-weight:800;color:'+varColor(vQ)+'">'+varStr(vQ)+'</div></div>'
+        +'<div style="width:1px;background:var(--border)"></div>'
+        +'<div><div style="font-size:0.55rem;color:var(--muted);text-transform:uppercase;margin-bottom:0.2rem">Fat.</div>'
+        +'<div style="font-size:1.1rem;font-weight:800;color:'+varColor(vF)+'">'+varStr(vF)+'</div></div>'
+        +'</div></div>';
     });
-  } else {
-    // demo: usa dadosCat já preenchido pelos pesos
-    lojas.forEach(function(l){ CATS.forEach(function(c){ catGrupo[c]+=(dadosCat[l][c]||0); }); });
-  }
-  // variação de cat (atual vs anterior) — usa total_qtde das bases dividido proporcionalmente
-  // catAnt e catFatAnt calculados abaixo junto com catFatAtual
+    html += '</div></div>';
 
-  // função de match categoria nome → sigla
-  function matchCat(nomeCat) {
-    var n = nomeCat.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-    if (n==="OCULOS"||n.includes("OCULOS")||n==="OC")          return "OC";
-    if (n==="RELOGIOS"||n==="RELOGIO"||n.includes("RELOGIO")||n==="RE") return "RE";
-    if (n==="GRAU"||n==="MULTI LENTE"||n.includes("GRAU")||n==="CG")   return "CG";
-    if (n==="LENTES"||n==="LENTES VISTA"||n.includes("LENTE")||n==="LE") return "LE";
-    if (n.includes("ACESSOR")||n.includes("ACES")||n==="AC")   return "Aces";
-    return null;
-  }
-
-  var catAnt={}; CATS.forEach(function(c){catAnt[c]=0;});
-
-  // também precisamos variação de faturamento por categoria
-  var catFatAtual={}, catFatAnt={};
-  CATS.forEach(function(c){catFatAtual[c]=0; catFatAnt[c]=0;});
-  if (!isDemo) {
-    lojas.forEach(function(l){
-      var a=atualEfetivo[l]||{categorias:[]};
-      var b=anteriorEfetivo[l]||{categorias:[]};
-      a.categorias.forEach(function(x){
-        var sig=matchCat(x.nome); if(sig) catFatAtual[sig]+=(x.valor||0);
+    // ── ranking lojas ─────────────────────────────────────
+    var rankData = lojas.map(function(loja){
+      var entry = Object.entries(CURVA_TO_LOJA).find(function(e){return e[1]===loja;});
+      var li = entry ? parseInt(entry[0]) : -1;
+      var esp = (li>=0&&CURVA_RAW.length) ? CURVA_RAW.slice(0,HOJE_IDX+1).reduce(function(s,r){return s+(r.vals[li]||0);},0) : 0;
+      var fat = allData.filter(function(d){return d.loja===loja;}).reduce(function(s,d){return s+d.vendas;},0);
+      var pct = esp>0?(fat/esp)*100:0;
+      var a = atualEfetivo[loja]||{total_valor:0};
+      var b = anteriorEfetivo[loja]||{total_valor:0};
+      var varFat = b.total_valor>0?(a.total_valor-b.total_valor)/b.total_valor*100:null;
+      var pecas=0,vendas=0,nV=0,ppvS=0,ppvC=0;
+      allData.filter(function(d){return d.loja===loja;}).forEach(function(d){
+        pecas+=d.pecas||0; vendas+=d.vendas||0; nV+=d.ticket>0?d.vendas/d.ticket:0;
+        if(d.ppv>0){ppvS+=d.ppv;ppvC++;}
       });
-      b.categorias.forEach(function(x){
-        var sig=matchCat(x.nome); if(sig) catFatAnt[sig]+=(x.valor||0);
-      });
+      var pa=ppvC>0?ppvS/ppvC:(nV>0?pecas/nV:0);
+      var tm=nV>0?vendas/nV:0;
+      return {loja:loja,pct:pct,varFat:varFat,pa:pa,tm:tm,fat:fat};
+    }).sort(function(a,b){return b.pct-a.pct;});
+
+    html += '<div class="card"><div class="fech-section-title">🏆 Ranking por Lojas</div>'
+      +'<div style="overflow-x:auto"><table class="fech-table"><thead><tr>'
+      +'<th>#</th><th>Loja</th><th>% Curva</th><th>Comparadas (Fat. YoY)</th><th>PA</th><th>TM</th><th>Faturado</th>'
+      +'</tr></thead><tbody>';
+
+    rankData.forEach(function(r,i){
+      var medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1);
+      var cor=sc(r.loja).tx;
+      var pctC=pctColor(r.pct,100,70);
+      var vfStr=r.varFat===null?'—':'<span style="color:'+varColor(r.varFat)+';font-weight:700">'+varStr(r.varFat)+'</span>';
+      html+='<tr>'
+        +'<td>'+medal+'</td>'
+        +'<td style="font-weight:800;color:'+cor+'">'+r.loja+'</td>'
+        +'<td style="font-weight:700;color:'+pctC+'">'+r.pct.toFixed(1)+'%'
+        +'<div class="fech-bar-wrap"><div class="fech-bar-bg"><div class="fech-bar-fill" style="width:'+Math.min(r.pct,100)+'%;background:'+pctC+'"></div></div></div></td>'
+        +'<td>'+vfStr+'</td>'
+        +'<td style="font-weight:700;color:'+pctColor(r.pa,2,1.5)+'">'+r.pa.toFixed(2)+'</td>'
+        +'<td style="font-weight:700;color:'+pctColor(r.tm,500,300)+'">'+fmtR(r.tm)+'</td>'
+        +'<td style="color:var(--muted);font-size:0.68rem">'+fmtR(r.fat)+'</td>'
+        +'</tr>';
     });
-    // também corrige catAnt (peças) usando mesmo match
-    CATS.forEach(function(c){catAnt[c]=0;});
-    lojas.forEach(function(l){
-      var b=anteriorEfetivo[l]||{categorias:[]};
-      b.categorias.forEach(function(x){
-        var sig=matchCat(x.nome); if(sig) catAnt[sig]+=(x.qtde||0);
-      });
-    });
-  } else {
-    // demo: faturamento estimado proporcional
-    var PESOS_FAT={"OC":0.45,"RE":0.08,"CG":0.28,"LE":0.14,"Aces":0.05};
-    CATS.forEach(function(c){
-      catFatAtual[c]=grupoFAt*PESOS_FAT[c];
-      catFatAnt[c]=grupoFAnt*PESOS_FAT[c];
-      catAnt[c]=Math.round(catGrupo[c]*0.91);
-    });
+
+    // linha grupo
+    html+='<tr style="border-top:2px solid var(--border);background:rgba(245,158,11,0.05)">'
+      +'<td></td>'
+      +'<td style="font-weight:800;color:#f59e0b">GRUPO</td>'
+      +'<td style="font-weight:800;color:'+pctColor(gPctCurva,100,70)+'">'+gPctCurva.toFixed(1)+'%</td>'
+      +'<td><span style="color:'+varColor(gVarFat)+';font-weight:800">'+varStr(gVarFat)+'</span></td>'
+      +'<td style="font-weight:800;color:'+pctColor(gPA,2,1.5)+'">'+gPA.toFixed(2)+'</td>'
+      +'<td style="font-weight:800;color:'+pctColor(gTM,500,300)+'">'+fmtR(gTM)+'</td>'
+      +'<td style="color:var(--muted);font-size:0.68rem">'+fmtR(grupoFat)+'</td>'
+      +'</tr>';
+
+    html += '</tbody></table></div></div>';
+
+    if (isDemo) {
+      html = '<div style="background:rgba(250,204,21,0.1);border:1px solid rgba(250,204,21,0.3);border-radius:8px;padding:0.6rem 1rem;margin-bottom:1.25rem;font-size:0.7rem;color:#b58800">⚠️ <strong>Dados de demonstração</strong> — Comparadas YoY estimadas. Conecte ao Sheets para dados reais.</div>' + html;
+    }
+
+    container.innerHTML = html;
+
+  } catch(e) {
+    container.innerHTML = '<div style="background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);border-radius:8px;padding:1rem;color:#f87171;font-size:0.75rem;font-family:monospace"><strong>Erro:</strong> '+e.message+'</div>';
+    console.error("renderFechamento:", e);
   }
-
-  var catsHtml = '<div class="card" style="margin-bottom:1.5rem;">'
-    + '<div class="fech-section-title">🌡️ Crescimento por Categoria — Grupo'+(isDemo&&!temTermometro?' <span style="font-size:0.6rem;font-weight:400;color:var(--muted)">(estimado)</span>':'')+' </div>'
-    + '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;">';
-  CATS.forEach(function(cat) {
-    var qAt  = catGrupo[cat]||0;
-    var qAnt = catAnt[cat]||0;
-    var fAt  = catFatAtual[cat]||0;
-    var fAnt = catFatAnt[cat]||0;
-    var varQ = qAnt>0?(qAt-qAnt)/qAnt*100:(qAt>0?999:0);
-    var varF = fAnt>0?(fAt-fAnt)/fAnt*100:(fAt>0?999:0);
-    var varQStr = varQ===999?'+Novo':(varQ>=0?'+':'')+varQ.toFixed(0)+'%';
-    var varFStr = varF===999?'+Novo':(varF>=0?'+':'')+varF.toFixed(0)+'%';
-    catsHtml += '<div style="text-align:center;padding:1.25rem 0.5rem;background:var(--card2);border-radius:10px;border:1px solid var(--border);">'
-      + '<div style="font-size:1.5rem;margin-bottom:0.5rem">'+CAT_ICONS[cat]+'</div>'
-      + '<div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:0.75rem">'+CAT_NAMES[cat]+'</div>'
-      + '<div style="display:flex;justify-content:center;gap:0.75rem;">'
-      + '<div><div style="font-size:0.55rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.2rem">Peças</div>'
-      +   '<div style="font-size:1.1rem;font-weight:800;color:'+varColor(varQ===999?1:varQ)+'">'+varQStr+'</div></div>'
-      + '<div style="width:1px;background:var(--border)"></div>'
-      + '<div><div style="font-size:0.55rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.2rem">Fat.</div>'
-      +   '<div style="font-size:1.1rem;font-weight:800;color:'+varColor(varF===999?1:varF)+'">'+varFStr+'</div></div>'
-      + '</div>'
-      + '</div>';
-  });
-  catsHtml += '</div></div>';
-
-  // ── RANKING LOJAS ──
-  var rankingData = lojas.map(function(loja) {
-    var pct    = getPctCurvaLoja(loja);
-    var varFat = getVarFatLoja(loja);
-    var patm   = getPATMLoja(loja);
-    return { loja:loja, pct:pct, varFat:varFat, pa:patm.pa, tm:patm.tm, fat:patm.fat };
-  }).sort(function(a,b){ return b.pct-a.pct; });
-
-  var rankHtml = '<div class="card">'
-    + '<div class="fech-section-title">🏆 Ranking por Lojas</div>'
-    + '<div style="overflow-x:auto"><table class="fech-table">'
-    + '<thead><tr><th>#</th><th>Loja</th><th>% Curva</th><th>Comparadas (Fat. YoY)</th><th>PA</th><th>TM</th><th>Faturado</th></tr></thead>'
-    + '<tbody>';
-
-  rankingData.forEach(function(r, i) {
-    var cor = sc(r.loja).tx;
-    var medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1);
-    var varFatStr = r.varFat===null?'—':badge(r.varFat);
-    var pctC = pctColor(r.pct,100,70);
-    var paC  = pctColor(r.pa,2,1.5);
-    var tmC  = pctColor(r.tm,500,300);
-    rankHtml += '<tr>'
-      + '<td style="font-size:1rem">'+medal+'</td>'
-      + '<td style="font-weight:800;color:'+cor+'">'+r.loja+'</td>'
-      + '<td style="font-weight:700;font-size:0.85rem;color:'+pctC+'">'+r.pct.toFixed(1)+'%'
-      +   '<div class="fech-bar-wrap"><div class="fech-bar-bg"><div class="fech-bar-fill" style="width:'+Math.min(r.pct,100)+'%;background:'+pctC+'"></div></div></div></td>'
-      + '<td style="font-weight:700">'+varFatStr+'</td>'
-      + '<td style="font-weight:700;color:'+paC+'">'+r.pa.toFixed(2)+'</td>'
-      + '<td style="font-weight:700;color:'+tmC+'">'+fmtR(r.tm)+'</td>'
-      + '<td style="color:var(--muted);font-size:0.68rem">'+fmtR(r.fat)+'</td>'
-      + '</tr>';
-  });
-
-  // linha grupo
-  var gVarFatStr = badge(gVarFat);
-  var gPaC  = pctColor(gPA,2,1.5);
-  var gTmC  = pctColor(gTM,500,300);
-  var gPctC = pctColor(gPctCurva,100,70);
-  rankHtml += '<tr style="border-top:2px solid var(--border);background:rgba(245,158,11,0.05)">'
-    + '<td></td>'
-    + '<td style="font-weight:800;color:#f59e0b">GRUPO</td>'
-    + '<td style="font-weight:800;color:'+gPctC+'">'+gPctCurva.toFixed(1)+'%</td>'
-    + '<td style="font-weight:800">'+gVarFatStr+'</td>'
-    + '<td style="font-weight:800;color:'+gPaC+'">'+gPA.toFixed(2)+'</td>'
-    + '<td style="font-weight:800;color:'+gTmC+'">'+fmtR(gTM)+'</td>'
-    + '<td style="color:var(--muted);font-size:0.68rem">'+fmtR(grupoFat)+'</td>'
-    + '</tr>';
-
-  rankHtml += '</tbody></table></div></div>';
-
-  var demoBanner = isDemo
-    ? '<div style="background:rgba(250,204,21,0.1);border:1px solid rgba(250,204,21,0.3);border-radius:8px;padding:0.6rem 1rem;margin-bottom:1.25rem;font-size:0.7rem;color:#b58800">⚠️ <strong>Dados de demonstração</strong> — Comparadas YoY estimadas. Conecte ao Sheets para dados reais.</div>'
-    : "";
-
-  container.innerHTML = demoBanner + headerHtml + catsHtml + rankHtml;
 }
 
 </script>
