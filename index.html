@@ -3402,7 +3402,7 @@ function gerarRelatorio() {
   setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 // ===== FECHAMENTO =====
-let fechGrupoAtivo = "TODAS";
+var fechGrupoAtivo = "TODAS";
 
 function setFechGrupo(g, btn) {
   fechGrupoAtivo = g;
@@ -3412,348 +3412,299 @@ function setFechGrupo(g, btn) {
 }
 
 function renderFechamento() {
-  const container = document.getElementById("fechamento-content");
-  if(!container) return;
-  try {
+  var container = document.getElementById("fechamento-content");
+  if (!container) return;
 
-  const LOJAS_ALL  = ["ATM","PBA LJR","PBA SHOP","PARAÍSO","TAPAJÓS","OTC PBA","OTC TPJ"];
-  const GRUPOS_FECH = { TODAS:null, VERMELHAS:["ATM","PBA SHOP","PBA LJR","PARAÍSO","TAPAJÓS"], OTICAS:["OTC PBA","OTC TPJ"] };
-  const grupoLojas = GRUPOS_FECH[fechGrupoAtivo] || (typeof GRUPOS !== 'undefined' ? GRUPOS[fechGrupoAtivo] : null);
-  const lojas = LOJAS_ALL.filter(l => !grupoLojas || grupoLojas.includes(l));
+  var LOJAS_ALL = ["ATM","PBA LJR","PBA SHOP","PARAÍSO","TAPAJÓS","OTC PBA","OTC TPJ"];
+  var GMAP = { TODAS:null, VERMELHAS:["ATM","PBA SHOP","PBA LJR","PARAÍSO","TAPAJÓS"], OTICAS:["OTC PBA","OTC TPJ"] };
+  var grupoLojas = GMAP[fechGrupoAtivo] || null;
+  var lojas = LOJAS_ALL.filter(function(l){ return !grupoLojas || grupoLojas.indexOf(l) >= 0; });
 
-  const atual    = parseBase(baseAtualData);
-  const anterior = parseBase(baseAnteriorData);
-
-  // Em modo demo, baseAtualData/baseAnteriorData chegam vazios.
-  // Geramos dados sintéticos a partir do allData para que o Fechamento
-  // mostre algo útil mesmo sem conexão com o Sheets.
-  const isDemo = !baseAtualData.length && !baseAnteriorData.length;
-
-  function buildDemoBase(fatorAnt) {
-    // Monta um objeto no mesmo formato de parseBase() usando allData
-    const result = {};
-    allData.forEach(d => {
-      if(!d.loja || d.loja === "—") return;
-      if(!result[d.loja]) result[d.loja] = { total_qtde: 0, total_valor: 0, categorias: [] };
-      result[d.loja].total_qtde  += d.pecas  || 0;
-      result[d.loja].total_valor += d.vendas || 0;
-    });
-    if(fatorAnt !== 1) {
-      Object.values(result).forEach(r => {
-        r.total_qtde  = Math.round(r.total_qtde  * fatorAnt);
-        r.total_valor = Math.round(r.total_valor * fatorAnt);
-      });
-    }
-    return result;
-  }
-
-  const atualEfetivo    = isDemo ? buildDemoBase(1)    : atual;
-  const anteriorEfetivo = isDemo ? buildDemoBase(0.91) : anterior;  // ano anterior ~91% como demo
-
-  if(!allData.length) {
-    container.innerHTML = `<div style="color:var(--muted);padding:2rem;text-align:center">Clique em 🔄 Atualizar Dados para carregar.</div>`;
+  if (!allData || !allData.length) {
+    container.innerHTML = '<div style="color:var(--muted);padding:2rem;text-align:center">Clique em 🔄 Atualizar Dados para carregar.</div>';
     return;
   }
 
-  // ── 1. COMPARADAS (% YoY de peças e faturamento) ──────────────────
-  function buildComparadasSection() {
-    let grupoQtdeAt=0, grupoQtdeAnt=0, grupoFatAt=0, grupoFatAnt=0;
+  var isDemo = !baseAtualData.length && !baseAnteriorData.length;
 
-    const lojaRows = lojas.map(loja => {
-      const a = atualEfetivo[loja]    || { total_qtde:0, total_valor:0 };
-      const b = anteriorEfetivo[loja] || { total_qtde:0, total_valor:0 };
-      grupoQtdeAt  += a.total_qtde;  grupoQtdeAnt += b.total_qtde;
-      grupoFatAt   += a.total_valor; grupoFatAnt  += b.total_valor;
-      const varP = b.total_qtde  > 0 ? (a.total_qtde -b.total_qtde) /b.total_qtde *100 : (a.total_qtde>0?999:0);
-      const varF = b.total_valor > 0 ? (a.total_valor-b.total_valor)/b.total_valor*100 : (a.total_valor>0?999:0);
-      const cor = sc(loja).tx;
-      const badgeP = varP===999 ? `<span class="fech-badge fech-badge-pos">NOVO</span>` : `<span class="fech-badge ${varP>=0?'fech-badge-pos':'fech-badge-neg'}">${varP>=0?'+':''}${varP.toFixed(1)}%</span>`;
-      const badgeF = varF===999 ? `<span class="fech-badge fech-badge-pos">NOVO</span>` : `<span class="fech-badge ${varF>=0?'fech-badge-pos':'fech-badge-neg'}">${varF>=0?'+':''}${varF.toFixed(1)}%</span>`;
-      return `<tr>
-        <td style="font-weight:700;color:${cor}">${loja}</td>
-        <td>${b.total_qtde}</td><td>${a.total_qtde}</td><td>${badgeP}</td>
-        <td>${fmtR(b.total_valor)}</td><td>${fmtR(a.total_valor)}</td><td>${badgeF}</td>
-      </tr>`;
-    }).join("");
-
-    const gVarP = grupoQtdeAnt>0 ? (grupoQtdeAt-grupoQtdeAnt)/grupoQtdeAnt*100 : 0;
-    const gVarF = grupoFatAnt>0  ? (grupoFatAt-grupoFatAnt)/grupoFatAnt*100     : 0;
-    const gBadgeP = `<span class="fech-badge ${gVarP>=0?'fech-badge-pos':'fech-badge-neg'}">${gVarP>=0?'+':''}${gVarP.toFixed(1)}%</span>`;
-    const gBadgeF = `<span class="fech-badge ${gVarF>=0?'fech-badge-pos':'fech-badge-neg'}">${gVarF>=0?'+':''}${gVarF.toFixed(1)}%</span>`;
-    const grupoRow = `<tr class="row-grupo" style="border-top:2px solid var(--border)">
-      <td style="color:#f59e0b">GRUPO</td>
-      <td>${grupoQtdeAnt}</td><td>${grupoQtdeAt}</td><td>${gBadgeP}</td>
-      <td>${fmtR(grupoFatAnt)}</td><td>${fmtR(grupoFatAt)}</td><td>${gBadgeF}</td>
-    </tr>`;
-
-    return `<div class="card fech-section">
-      <div class="fech-section-title">📊 Comparadas — Peças e Faturamento (vs. Ano Anterior)</div>
-      <div style="overflow-x:auto">
-        <table class="fech-table">
-          <thead><tr>
-            <th>Loja</th>
-            <th>Peças Ant.</th><th>Peças Atual</th><th>Var. Peças</th>
-            <th>Fat. Ant.</th><th>Fat. Atual</th><th>Var. Fat.</th>
-          </tr></thead>
-          <tbody>${lojaRows}${grupoRow}</tbody>
-        </table>
-      </div>
-    </div>`;
-  }
-
-  // ── 2. PA E TM POR LOJA ────────────────────────────────────────────
-  function buildPATMSection() {
-    // PA = col C / col D da aba indicadores = pecas / (vendas/ticket) = ppv direto
-    // TM = vendas / nVendas = ticket direto
-    // Ambos já chegam no allData via campos ppv e ticket
-    const lojaStats = {};
-    lojas.forEach(l => { lojaStats[l] = { pecas:0, vendas:0, nVendas:0, ppvSum:0, ppvCount:0 }; });
-
-    allData.forEach(d => {
-      if(!lojas.includes(d.loja)) return;
-      const s = lojaStats[d.loja];
-      s.pecas   += d.pecas  || 0;
-      s.vendas  += d.vendas || 0;
-      const nV = d.ticket > 0 ? d.vendas / d.ticket : 0;
-      s.nVendas += nV;
-      if(d.ppv > 0) { s.ppvSum += d.ppv; s.ppvCount++; }
+  function buildDemoBase(fator) {
+    var result = {};
+    allData.forEach(function(d) {
+      if (!d.loja || d.loja === "—") return;
+      if (!result[d.loja]) result[d.loja] = { total_qtde:0, total_valor:0, categorias:[] };
+      result[d.loja].total_qtde  += Math.round((d.pecas  || 0) * fator);
+      result[d.loja].total_valor += (d.vendas || 0) * fator;
     });
-
-    let grupoTotPecas=0, grupoTotVendas=0, grupoTotNVendas=0, grupoPpvSum=0, grupoPpvCount=0;
-
-    const lojaRows = lojas.map(loja => {
-      const s = lojaStats[loja] || {};
-      const pa = s.ppvCount > 0 ? s.ppvSum / s.ppvCount : (s.nVendas>0 ? s.pecas/s.nVendas : 0);
-      const tm = s.nVendas > 0 ? s.vendas / s.nVendas : 0;
-      grupoTotPecas   += s.pecas;   grupoTotVendas  += s.vendas;
-      grupoTotNVendas += s.nVendas; grupoPpvSum     += s.ppvSum; grupoPpvCount += s.ppvCount;
-      const cor = sc(loja).tx;
-      const paBadge = pa >= 2 ? 'fech-badge-pos' : pa >= 1.5 ? 'fech-badge-neu' : 'fech-badge-neg';
-      const tmBadge = tm >= 500 ? 'fech-badge-pos' : tm >= 300 ? 'fech-badge-neu' : 'fech-badge-neg';
-      return `<tr>
-        <td style="font-weight:700;color:${cor}">${loja}</td>
-        <td>${s.pecas}</td>
-        <td>${Math.round(s.nVendas)}</td>
-        <td><span class="fech-badge ${paBadge}">${pa.toFixed(2)}</span></td>
-        <td><span class="fech-badge ${tmBadge}">${fmtR(tm)}</span></td>
-        <td style="color:var(--muted);font-size:0.65rem">${fmtR(s.vendas)}</td>
-      </tr>`;
-    }).join("");
-
-    const grupoPA = grupoPpvCount > 0 ? grupoPpvSum/grupoPpvCount : (grupoTotNVendas>0 ? grupoTotPecas/grupoTotNVendas : 0);
-    const grupoTM = grupoTotNVendas > 0 ? grupoTotVendas/grupoTotNVendas : 0;
-    const gPaBadge = grupoPA >= 2 ? 'fech-badge-pos' : grupoPA >= 1.5 ? 'fech-badge-neu' : 'fech-badge-neg';
-    const gTmBadge = grupoTM >= 500 ? 'fech-badge-pos' : grupoTM >= 300 ? 'fech-badge-neu' : 'fech-badge-neg';
-
-    const grupoRow = `<tr class="row-grupo" style="border-top:2px solid var(--border)">
-      <td style="color:#f59e0b">GRUPO</td>
-      <td>${grupoTotPecas}</td>
-      <td>${Math.round(grupoTotNVendas)}</td>
-      <td><span class="fech-badge ${gPaBadge}">${grupoPA.toFixed(2)}</span></td>
-      <td><span class="fech-badge ${gTmBadge}">${fmtR(grupoTM)}</span></td>
-      <td style="color:var(--muted);font-size:0.65rem">${fmtR(grupoTotVendas)}</td>
-    </tr>`;
-
-    return `<div class="card fech-section">
-      <div class="fech-section-title">📦 PA e Ticket Médio (TM) por Loja</div>
-      <div style="overflow-x:auto">
-        <table class="fech-table">
-          <thead><tr>
-            <th>Loja</th><th>Peças</th><th>Nº Vendas</th>
-            <th>PA (Peças/Venda)</th><th>TM (Ticket Médio)</th><th>Faturamento</th>
-          </tr></thead>
-          <tbody>${lojaRows}${grupoRow}</tbody>
-        </table>
-      </div>
-    </div>`;
+    return result;
   }
 
-  // ── Notice se demo ─────────────────────────────────────────────────
-  const demoBanner = isDemo
-    ? `<div style="background:rgba(250,204,21,0.1);border:1px solid rgba(250,204,21,0.3);border-radius:8px;padding:0.6rem 1rem;margin-bottom:1.25rem;font-size:0.7rem;color:#b58800">
-        ⚠️ <strong>Dados de demonstração</strong> — Comparadas YoY estimadas a partir dos dados atuais. Conecte ao Sheets para dados reais.
-      </div>`
+  var atualEfetivo    = isDemo ? buildDemoBase(1)    : parseBase(baseAtualData);
+  var anteriorEfetivo = isDemo ? buildDemoBase(0.91) : parseBase(baseAnteriorData);
+
+  // ── % sobre a curva esperada até hoje ──
+  function getPctCurvaLoja(loja) {
+    var entry = Object.entries(CURVA_TO_LOJA).find(function(e){ return e[1]===loja; });
+    if (!entry) return 0;
+    var li = parseInt(entry[0]);
+    var esp = CURVA_RAW.slice(0, HOJE_IDX+1).reduce(function(s,r){ return s+(r.vals[li]||0); }, 0);
+    if (!esp) return 0;
+    var fat = allData.filter(function(d){ return d.loja===loja; }).reduce(function(s,d){ return s+d.vendas; }, 0);
+    return (fat / esp) * 100;
+  }
+
+  // ── comparadas YoY faturamento por loja ──
+  function getVarFatLoja(loja) {
+    var a = atualEfetivo[loja]    || { total_valor:0 };
+    var b = anteriorEfetivo[loja] || { total_valor:0 };
+    if (!b.total_valor) return null;
+    return (a.total_valor - b.total_valor) / b.total_valor * 100;
+  }
+
+  // ── PA e TM por loja ──
+  function getPATMLoja(loja) {
+    var pecas=0, vendas=0, nV=0, ppvS=0, ppvC=0;
+    allData.forEach(function(d) {
+      if (d.loja !== loja) return;
+      pecas   += d.pecas  || 0;
+      vendas  += d.vendas || 0;
+      nV      += d.ticket > 0 ? d.vendas/d.ticket : 0;
+      if (d.ppv > 0) { ppvS += d.ppv; ppvC++; }
+    });
+    return {
+      pa: ppvC > 0 ? ppvS/ppvC : (nV>0 ? pecas/nV : 0),
+      tm: nV > 0 ? vendas/nV : 0,
+      fat: vendas, nV: nV
+    };
+  }
+
+  // ── TOTAIS GRUPO ──
+  var grupoFat=0, grupoEsp=0, grupoQAt=0, grupoQAnt=0, grupoFAt=0, grupoFAnt=0;
+  var grupoPpvS=0, grupoPpvC=0, grupoVendas=0, grupoNV=0;
+
+  lojas.forEach(function(loja) {
+    var entry = Object.entries(CURVA_TO_LOJA).find(function(e){ return e[1]===loja; });
+    var li = entry ? parseInt(entry[0]) : -1;
+    var esp = li>=0 ? CURVA_RAW.slice(0, HOJE_IDX+1).reduce(function(s,r){ return s+(r.vals[li]||0); },0) : 0;
+    var fat = allData.filter(function(d){ return d.loja===loja; }).reduce(function(s,d){ return s+d.vendas; },0);
+    grupoFat += fat; grupoEsp += esp;
+    var a = atualEfetivo[loja]    || { total_qtde:0, total_valor:0 };
+    var b = anteriorEfetivo[loja] || { total_qtde:0, total_valor:0 };
+    grupoQAt+=a.total_qtde; grupoQAnt+=b.total_qtde; grupoFAt+=a.total_valor; grupoFAnt+=b.total_valor;
+    allData.filter(function(d){ return d.loja===loja; }).forEach(function(d) {
+      grupoVendas+=d.vendas; grupoNV+=d.ticket>0?d.vendas/d.ticket:0;
+      if(d.ppv>0){grupoPpvS+=d.ppv;grupoPpvC++;}
+    });
+  });
+
+  var gPctCurva = grupoEsp>0 ? (grupoFat/grupoEsp)*100 : 0;
+  var gVarFat   = grupoFAnt>0 ? (grupoFAt-grupoFAnt)/grupoFAnt*100 : 0;
+  var gPA       = grupoPpvC>0 ? grupoPpvS/grupoPpvC : (grupoNV>0?grupoQAt/grupoNV:0); // usa qtde atual
+  var gTM       = grupoNV>0 ? grupoVendas/grupoNV : 0;
+
+  function pctColor(v, ok, warn) { return v>=ok?'var(--pos-color)':v>=warn?'var(--accent4)':'var(--neg-color)'; }
+  function varColor(v) { return v>=0?'var(--pos-color)':'var(--neg-color)'; }
+  function badge(v, suffix) {
+    suffix = suffix||'%';
+    var s = (v>=0?'+':'')+v.toFixed(1)+suffix;
+    var c = varColor(v);
+    return '<span style="color:'+c+';font-weight:700">'+s+'</span>';
+  }
+
+  // ── HEADER com 3 KPIs grandes ──
+  var headerHtml = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5rem;margin-bottom:2rem;">'
+    // % META CURVA
+    + '<div class="card" style="text-align:center;padding:2rem 1rem;">'
+    + '<div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;color:var(--muted);margin-bottom:0.75rem;">🎯 % Meta (Curva)</div>'
+    + '<div style="font-size:3rem;font-weight:900;letter-spacing:-0.04em;color:'+pctColor(gPctCurva,100,70)+'">'+gPctCurva.toFixed(1)+'%</div>'
+    + '<div style="font-size:0.65rem;color:var(--muted);margin-top:0.4rem;">Realizado vs curva esperada hoje</div>'
+    + '</div>'
+    // % COMPARADAS
+    + '<div class="card" style="text-align:center;padding:2rem 1rem;">'
+    + '<div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;color:var(--muted);margin-bottom:0.75rem;">📊 % Comparadas (Fat. YoY)</div>'
+    + '<div style="font-size:3rem;font-weight:900;letter-spacing:-0.04em;color:'+varColor(gVarFat)+'">'+(gVarFat>=0?'+':'')+gVarFat.toFixed(1)+'%</div>'
+    + '<div style="font-size:0.65rem;color:var(--muted);margin-top:0.4rem;">Faturamento vs ano anterior</div>'
+    + '</div>'
+    // PA e TM
+    + '<div class="card" style="text-align:center;padding:2rem 1rem;">'
+    + '<div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;color:var(--muted);margin-bottom:0.75rem;">📦 PA &amp; TM — Grupo</div>'
+    + '<div style="display:flex;justify-content:center;align-items:baseline;gap:1.5rem;margin-top:0.25rem;">'
+    + '<div><div style="font-size:2.2rem;font-weight:900;color:'+pctColor(gPA,2,1.5)+'">'+gPA.toFixed(2)+'</div><div style="font-size:0.6rem;color:var(--muted)">PA</div></div>'
+    + '<div style="width:1px;height:40px;background:var(--border)"></div>'
+    + '<div><div style="font-size:2.2rem;font-weight:900;color:'+pctColor(gTM,500,300)+'">'+fmtR(gTM)+'</div><div style="font-size:0.6rem;color:var(--muted)">TM</div></div>'
+    + '</div></div>'
+    + '</div>';
+
+  // ── CATEGORIAS (peças por cat) ──
+  var CATS = ["OC","RE","CG","LE","Aces"];
+  var CAT_ICONS = {"OC":"👓","RE":"⌚","CG":"🔍","LE":"👁️","Aces":"🛍️"};
+  var CAT_NAMES = {"OC":"Óculos","RE":"Relógio","CG":"C. Grau","LE":"Lentes","Aces":"Acess."};
+  var dadosCat = {};
+  lojas.forEach(function(l){ dadosCat[l]={}; CATS.forEach(function(c){ dadosCat[l][c]=0; }); });
+  var temTermometro = CATS.some(function(c){ return termometrosData[c]&&termometrosData[c].length>1; });
+  if (temTermometro) {
+    CATS.forEach(function(cat) {
+      (termometrosData[cat]||[]).slice(1).forEach(function(row) {
+        var nome=String(row[1]||"").trim(), qtde=parseInt(String(row[2]||"0").replace(/[^\d]/g,""))||0;
+        if (!nome||qtde<=0) return;
+        var l=lojaDoVendedor(nome);
+        if (!l||lojas.indexOf(l)<0) return;
+        dadosCat[l][cat]=(dadosCat[l][cat]||0)+qtde;
+      });
+    });
+  } else if (isDemo) {
+    var PESOS={"OC":0.40,"RE":0.10,"CG":0.25,"LE":0.15,"Aces":0.10};
+    lojas.forEach(function(loja){
+      var pecas=allData.filter(function(d){return d.loja===loja;}).reduce(function(s,d){return s+(d.pecas||0);},0);
+      CATS.forEach(function(cat){dadosCat[loja][cat]=Math.round(pecas*PESOS[cat]);});
+    });
+  }
+  // totais de cat para o grupo
+  var catGrupo={}; CATS.forEach(function(c){catGrupo[c]=0;});
+  if (temTermometro) {
+    lojas.forEach(function(l){ CATS.forEach(function(c){ catGrupo[c]+=(dadosCat[l][c]||0); }); });
+  } else if (!isDemo) {
+    // sem termômetro e dados reais: usa atualEfetivo.categorias
+    lojas.forEach(function(l){
+      var a=atualEfetivo[l]||{categorias:[]};
+      a.categorias.forEach(function(x){
+        var sig=matchCat(x.nome); if(sig) catGrupo[sig]+=(x.qtde||0);
+      });
+    });
+  } else {
+    // demo: usa dadosCat já preenchido pelos pesos
+    lojas.forEach(function(l){ CATS.forEach(function(c){ catGrupo[c]+=(dadosCat[l][c]||0); }); });
+  }
+  // variação de cat (atual vs anterior) — usa total_qtde das bases dividido proporcionalmente
+  // catAnt e catFatAnt calculados abaixo junto com catFatAtual
+
+  // função de match categoria nome → sigla
+  function matchCat(nomeCat) {
+    var n = nomeCat.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+    if (n.includes("OCULOS")||n==="OC")   return "OC";
+    if (n.includes("RELOGIO")||n==="RE")  return "RE";
+    if (n.includes("GRAU")||n==="CG")     return "CG";
+    if (n.includes("LENTE")||n==="LE")    return "LE";
+    if (n.includes("ACESSOR")||n.includes("ACES")||n==="AC") return "Aces";
+    return null;
+  }
+
+  var catAnt={}; CATS.forEach(function(c){catAnt[c]=0;});
+
+  // também precisamos variação de faturamento por categoria
+  var catFatAtual={}, catFatAnt={};
+  CATS.forEach(function(c){catFatAtual[c]=0; catFatAnt[c]=0;});
+  if (!isDemo) {
+    lojas.forEach(function(l){
+      var a=atualEfetivo[l]||{categorias:[]};
+      var b=anteriorEfetivo[l]||{categorias:[]};
+      a.categorias.forEach(function(x){
+        var sig=matchCat(x.nome); if(sig) catFatAtual[sig]+=(x.valor||0);
+      });
+      b.categorias.forEach(function(x){
+        var sig=matchCat(x.nome); if(sig) catFatAnt[sig]+=(x.valor||0);
+      });
+    });
+    // também corrige catAnt (peças) usando mesmo match
+    CATS.forEach(function(c){catAnt[c]=0;});
+    lojas.forEach(function(l){
+      var b=anteriorEfetivo[l]||{categorias:[]};
+      b.categorias.forEach(function(x){
+        var sig=matchCat(x.nome); if(sig) catAnt[sig]+=(x.qtde||0);
+      });
+    });
+  } else {
+    // demo: faturamento estimado proporcional
+    var PESOS_FAT={"OC":0.45,"RE":0.08,"CG":0.28,"LE":0.14,"Aces":0.05};
+    CATS.forEach(function(c){
+      catFatAtual[c]=grupoFAt*PESOS_FAT[c];
+      catFatAnt[c]=grupoFAnt*PESOS_FAT[c];
+      catAnt[c]=Math.round(catGrupo[c]*0.91);
+    });
+  }
+
+  var catsHtml = '<div class="card" style="margin-bottom:1.5rem;">'
+    + '<div class="fech-section-title">🌡️ Crescimento por Categoria — Grupo'+(isDemo&&!temTermometro?' <span style="font-size:0.6rem;font-weight:400;color:var(--muted)">(estimado)</span>':'')+' </div>'
+    + '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;">';
+  CATS.forEach(function(cat) {
+    var qAt  = catGrupo[cat]||0;
+    var qAnt = catAnt[cat]||0;
+    var fAt  = catFatAtual[cat]||0;
+    var fAnt = catFatAnt[cat]||0;
+    var varQ = qAnt>0?(qAt-qAnt)/qAnt*100:(qAt>0?999:0);
+    var varF = fAnt>0?(fAt-fAnt)/fAnt*100:(fAt>0?999:0);
+    var varQStr = varQ===999?'+Novo':(varQ>=0?'+':'')+varQ.toFixed(0)+'%';
+    var varFStr = varF===999?'+Novo':(varF>=0?'+':'')+varF.toFixed(0)+'%';
+    catsHtml += '<div style="text-align:center;padding:1.25rem 0.5rem;background:var(--card2);border-radius:10px;border:1px solid var(--border);">'
+      + '<div style="font-size:1.5rem;margin-bottom:0.5rem">'+CAT_ICONS[cat]+'</div>'
+      + '<div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:0.75rem">'+CAT_NAMES[cat]+'</div>'
+      + '<div style="display:flex;justify-content:center;gap:0.75rem;">'
+      + '<div><div style="font-size:0.55rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.2rem">Peças</div>'
+      +   '<div style="font-size:1.1rem;font-weight:800;color:'+varColor(varQ===999?1:varQ)+'">'+varQStr+'</div></div>'
+      + '<div style="width:1px;background:var(--border)"></div>'
+      + '<div><div style="font-size:0.55rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.2rem">Fat.</div>'
+      +   '<div style="font-size:1.1rem;font-weight:800;color:'+varColor(varF===999?1:varF)+'">'+varFStr+'</div></div>'
+      + '</div>'
+      + '</div>';
+  });
+  catsHtml += '</div></div>';
+
+  // ── RANKING LOJAS ──
+  var rankingData = lojas.map(function(loja) {
+    var pct    = getPctCurvaLoja(loja);
+    var varFat = getVarFatLoja(loja);
+    var patm   = getPATMLoja(loja);
+    return { loja:loja, pct:pct, varFat:varFat, pa:patm.pa, tm:patm.tm, fat:patm.fat };
+  }).sort(function(a,b){ return b.pct-a.pct; });
+
+  var rankHtml = '<div class="card">'
+    + '<div class="fech-section-title">🏆 Ranking por Lojas</div>'
+    + '<div style="overflow-x:auto"><table class="fech-table">'
+    + '<thead><tr><th>#</th><th>Loja</th><th>% Curva</th><th>Comparadas (Fat. YoY)</th><th>PA</th><th>TM</th><th>Faturado</th></tr></thead>'
+    + '<tbody>';
+
+  rankingData.forEach(function(r, i) {
+    var cor = sc(r.loja).tx;
+    var medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1);
+    var varFatStr = r.varFat===null?'—':badge(r.varFat);
+    var pctC = pctColor(r.pct,100,70);
+    var paC  = pctColor(r.pa,2,1.5);
+    var tmC  = pctColor(r.tm,500,300);
+    rankHtml += '<tr>'
+      + '<td style="font-size:1rem">'+medal+'</td>'
+      + '<td style="font-weight:800;color:'+cor+'">'+r.loja+'</td>'
+      + '<td style="font-weight:700;font-size:0.85rem;color:'+pctC+'">'+r.pct.toFixed(1)+'%'
+      +   '<div class="fech-bar-wrap"><div class="fech-bar-bg"><div class="fech-bar-fill" style="width:'+Math.min(r.pct,100)+'%;background:'+pctC+'"></div></div></div></td>'
+      + '<td style="font-weight:700">'+varFatStr+'</td>'
+      + '<td style="font-weight:700;color:'+paC+'">'+r.pa.toFixed(2)+'</td>'
+      + '<td style="font-weight:700;color:'+tmC+'">'+fmtR(r.tm)+'</td>'
+      + '<td style="color:var(--muted);font-size:0.68rem">'+fmtR(r.fat)+'</td>'
+      + '</tr>';
+  });
+
+  // linha grupo
+  var gVarFatStr = badge(gVarFat);
+  var gPaC  = pctColor(gPA,2,1.5);
+  var gTmC  = pctColor(gTM,500,300);
+  var gPctC = pctColor(gPctCurva,100,70);
+  rankHtml += '<tr style="border-top:2px solid var(--border);background:rgba(245,158,11,0.05)">'
+    + '<td></td>'
+    + '<td style="font-weight:800;color:#f59e0b">GRUPO</td>'
+    + '<td style="font-weight:800;color:'+gPctC+'">'+gPctCurva.toFixed(1)+'%</td>'
+    + '<td style="font-weight:800">'+gVarFatStr+'</td>'
+    + '<td style="font-weight:800;color:'+gPaC+'">'+gPA.toFixed(2)+'</td>'
+    + '<td style="font-weight:800;color:'+gTmC+'">'+fmtR(gTM)+'</td>'
+    + '<td style="color:var(--muted);font-size:0.68rem">'+fmtR(grupoFat)+'</td>'
+    + '</tr>';
+
+  rankHtml += '</tbody></table></div></div>';
+
+  var demoBanner = isDemo
+    ? '<div style="background:rgba(250,204,21,0.1);border:1px solid rgba(250,204,21,0.3);border-radius:8px;padding:0.6rem 1rem;margin-bottom:1.25rem;font-size:0.7rem;color:#b58800">⚠️ <strong>Dados de demonstração</strong> — Comparadas YoY estimadas. Conecte ao Sheets para dados reais.</div>'
     : "";
 
-  // ── 3. COMPARADAS DE PEÇAS (por categoria) ─────────────────────────
-  function buildComparadasPecasSection() {
-    const CATS = ["OC","RE","CG","LE","Aces"];
-    const CAT_NAMES = {"OC":"Óculos","RE":"Relógio","CG":"C. Grau","LE":"Lentes","Aces":"Acessórios"};
-
-    const dadosGrupo = {};
-    lojas.forEach(l => { dadosGrupo[l] = {}; });
-
-    const temTermometro = CATS.some(c => termometrosData[c]&&termometrosData[c].length>1);
-
-    if(temTermometro) {
-      // Dados reais do Sheets
-      CATS.forEach(cat => {
-        (termometrosData[cat]||[]).slice(1).forEach(row => {
-          const nome = String(row[1]||"").trim();
-          const qtde = parseInt(String(row[2]||"0").replace(/[^\d]/g,""))||0;
-          if(!nome || qtde<=0) return;
-          const l = lojaDoVendedor(nome);
-          if(!l || !lojas.includes(l)) return;
-          if(!dadosGrupo[l][cat]) dadosGrupo[l][cat] = 0;
-          dadosGrupo[l][cat] += qtde;
-        });
-      });
-    } else if(isDemo) {
-      // Fallback demo: distribui peças proporcionalmente por categoria
-      const CAT_PESOS = {"OC":0.40,"RE":0.10,"CG":0.25,"LE":0.15,"Aces":0.10};
-      lojas.forEach(loja => {
-        const pecasLoja = allData.filter(d=>d.loja===loja).reduce((s,d)=>s+(d.pecas||0),0);
-        CATS.forEach(cat => { dadosGrupo[loja][cat] = Math.round(pecasLoja * CAT_PESOS[cat]); });
-      });
-    } else {
-      return `<div class="card fech-section">
-        <div class="fech-section-title">🌡️ Comparadas de Peças (Termômetro)</div>
-        <p style="color:var(--muted);font-size:0.72rem">Sem dados de termômetro carregados.</p>
-      </div>`;
-    }
-
-    let grupoTotais = {}; CATS.forEach(c => { grupoTotais[c]=0; }); let grupoTotal=0;
-
-    const lojaRows = lojas.map(loja => {
-      const vals = CATS.map(cat => dadosGrupo[loja][cat]||0);
-      const total = vals.reduce((s,v)=>s+v,0);
-      vals.forEach((v,i) => { grupoTotais[CATS[i]] += v; grupoTotal += v; });
-      const cor = sc(loja).tx;
-      if(!total) return "";
-      return `<tr>
-        <td style="font-weight:700;color:${cor}">${loja}</td>
-        ${vals.map(v=>`<td style="color:${v>0?'var(--text)':'var(--muted)'}">${v>0?v:"—"}</td>`).join("")}
-        <td style="font-weight:700">${total}</td>
-      </tr>`;
-    }).join("");
-
-    const gRow = `<tr class="row-grupo" style="border-top:2px solid var(--border)">
-      <td style="color:#f59e0b">GRUPO</td>
-      ${CATS.map(c=>`<td style="font-weight:700">${grupoTotais[c]||"—"}</td>`).join("")}
-      <td style="font-weight:800">${grupoTotal}</td>
-    </tr>`;
-
-    return `<div class="card fech-section">
-      <div class="fech-section-title">🌡️ Comparadas de Peças por Categoria${isDemo&&!temTermometro?' <span style="font-size:0.6rem;font-weight:400;color:var(--muted)">(estimado)</span>':''}</div>
-      <div style="overflow-x:auto">
-        <table class="fech-table">
-          <thead><tr>
-            <th>Loja</th>
-            ${CATS.map(c=>`<th>${CAT_NAMES[c]||c}</th>`).join("")}
-            <th>Total</th>
-          </tr></thead>
-          <tbody>${lojaRows}${gRow}</tbody>
-        </table>
-      </div>
-    </div>`;
-  }
-
-  // ── 4. % DA META ───────────────────────────────────────────────────
-  function buildMetaSection() {
-    let grupoFat=0, grupoMeta=0;
-
-    const lojaRows = lojas.map(loja => {
-      const entry = Object.entries(CURVA_TO_LOJA).find(([,v])=>v===loja);
-      const li = entry ? parseInt(entry[0]) : -1;
-      const meta = li >= 0 ? META_MENSAL[li] : 0;
-      const fat  = allData.filter(d=>d.loja===loja).reduce((s,d)=>s+d.vendas,0);
-      grupoFat  += fat;
-      grupoMeta += meta;
-      const pct = meta > 0 ? (fat/meta)*100 : 0;
-      const pctCls = pct>=100?'fech-badge-pos':pct>=70?'fech-badge-neu':'fech-badge-neg';
-      const fillColor = pct>=100?'var(--pos-color)':pct>=70?'var(--accent4)':'var(--neg-color)';
-      const barPct = Math.min(pct, 100);
-      const cor = sc(loja).tx;
-      return `<tr>
-        <td style="font-weight:700;color:${cor}">${loja}</td>
-        <td>${fmtR(meta)}</td>
-        <td style="font-weight:600">${fmtR(fat)}</td>
-        <td>
-          <span class="fech-badge ${pctCls}">${pct.toFixed(1)}%</span>
-          <div class="fech-bar-wrap">
-            <div class="fech-bar-bg"><div class="fech-bar-fill" style="width:${barPct}%;background:${fillColor}"></div></div>
-          </div>
-        </td>
-        <td style="color:${fat>meta?'var(--pos-color)':'var(--neg-color)'};font-weight:600">${fat>meta?'+':''}${fmtR(fat-meta)}</td>
-      </tr>`;
-    }).join("");
-
-    const gPct = grupoMeta > 0 ? (grupoFat/grupoMeta)*100 : 0;
-    const gBarPct = Math.min(gPct, 100);
-    const gFillColor = gPct>=100?'var(--pos-color)':gPct>=70?'var(--accent4)':'var(--neg-color)';
-    const gPctCls = gPct>=100?'fech-badge-pos':gPct>=70?'fech-badge-neu':'fech-badge-neg';
-
-    const grupoRow = `<tr class="row-grupo" style="border-top:2px solid var(--border)">
-      <td style="color:#f59e0b">GRUPO</td>
-      <td>${fmtR(grupoMeta)}</td>
-      <td style="font-weight:700">${fmtR(grupoFat)}</td>
-      <td>
-        <span class="fech-badge ${gPctCls}">${gPct.toFixed(1)}%</span>
-        <div class="fech-bar-wrap">
-          <div class="fech-bar-bg"><div class="fech-bar-fill" style="width:${gBarPct}%;background:${gFillColor}"></div></div>
-        </div>
-      </td>
-      <td style="color:${grupoFat>grupoMeta?'var(--pos-color)':'var(--neg-color)'};font-weight:700">${grupoFat>grupoMeta?'+':''}${fmtR(grupoFat-grupoMeta)}</td>
-    </tr>`;
-
-    return `<div class="card fech-section">
-      <div class="fech-section-title">🎯 % da Meta — Lojas e Grupo</div>
-      <div style="overflow-x:auto">
-        <table class="fech-table">
-          <thead><tr>
-            <th>Loja</th><th>Meta Mês</th><th>Faturado</th><th>% Meta</th><th>Desvio (R$)</th>
-          </tr></thead>
-          <tbody>${lojaRows}${grupoRow}</tbody>
-        </table>
-      </div>
-    </div>`;
-  }
-
-  // ── KPIs de destaque no topo ──
-  function buildKPIstrip() {
-    const lojasMeta = lojas.map(loja => {
-      const entry = Object.entries(CURVA_TO_LOJA).find(([,v])=>v===loja);
-      const li = entry ? parseInt(entry[0]) : -1;
-      const meta = li >= 0 ? META_MENSAL[li] : 0;
-      const fat  = allData.filter(d=>d.loja===loja).reduce((s,d)=>s+d.vendas,0);
-      return { loja, meta, fat, pct: meta>0?(fat/meta)*100:0 };
-    });
-    const grupoFat  = lojasMeta.reduce((s,l)=>s+l.fat,0);
-    const grupoMeta = lojasMeta.reduce((s,l)=>s+l.meta,0);
-    const gPct      = grupoMeta>0?(grupoFat/grupoMeta)*100:0;
-    const lojasOk   = lojasMeta.filter(l=>l.pct>=100).length;
-
-    // PA grupo
-    const paVals = allData.filter(d=>lojas.includes(d.loja)&&d.ppv>0);
-    const paGrupo = paVals.length > 0 ? paVals.reduce((s,d)=>s+d.ppv,0)/paVals.length : 0;
-
-    // TM grupo
-    let tVendas=0, tNVendas=0;
-    allData.filter(d=>lojas.includes(d.loja)).forEach(d=>{ tVendas+=d.vendas; tNVendas+=d.ticket>0?d.vendas/d.ticket:0; });
-    const tmGrupo = tNVendas>0?tVendas/tNVendas:0;
-
-    const gColor = gPct>=100?'var(--pos-color)':gPct>=70?'var(--accent4)':'var(--neg-color)';
-    return `<div class="kpi-grid" style="margin-bottom:1.75rem">
-      <div class="kpi kpi-a"><label>Faturado Grupo</label><div class="kpi-val">${fmtR(grupoFat)}</div><div class="kpi-sub">de ${fmtR(grupoMeta)} de meta</div></div>
-      <div class="kpi" style="border:1px solid var(--border);border-radius:12px;padding:1.25rem 1.5rem;background:var(--card)"><label style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.12em;display:block;margin-bottom:0.5rem">% Meta Grupo</label><div class="kpi-val" style="color:${gColor}">${gPct.toFixed(1)}%</div><div class="kpi-sub">${lojasOk} de ${lojas.length} lojas bateram a meta</div></div>
-      <div class="kpi kpi-c"><label>PA Grupo</label><div class="kpi-val">${paGrupo.toFixed(2)}</div><div class="kpi-sub">Peças por atendimento</div></div>
-      <div class="kpi kpi-d"><label>TM Grupo</label><div class="kpi-val">${fmtR(tmGrupo)}</div><div class="kpi-sub">Ticket médio</div></div>
-    </div>`;
-  }
-
-  container.innerHTML =
-    demoBanner +
-    buildKPIstrip() +
-    buildMetaSection() +
-    buildComparadasSection() +
-    buildPATMSection() +
-    buildComparadasPecasSection();
-  } catch(e) {
-    container.innerHTML = `<div style="background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);border-radius:8px;padding:1rem;color:#f87171;font-size:0.75rem;font-family:monospace">
-      <strong>Erro em renderFechamento:</strong><br>${e.message}<br><pre style="margin-top:0.5rem;font-size:0.65rem;white-space:pre-wrap">${e.stack||''}</pre>
-    </div>`;
-    console.error("renderFechamento:", e);
-  }
+  container.innerHTML = demoBanner + headerHtml + catsHtml + rankHtml;
 }
 
 </script>
+</body>
+</html>
