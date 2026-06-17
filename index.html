@@ -3414,9 +3414,11 @@ function setFechGrupo(g, btn) {
 function renderFechamento() {
   const container = document.getElementById("fechamento-content");
   if(!container) return;
+  try {
 
   const LOJAS_ALL  = ["ATM","PBA LJR","PBA SHOP","PARAÍSO","TAPAJÓS","OTC PBA","OTC TPJ"];
-  const grupoLojas = GRUPOS[fechGrupoAtivo];
+  const GRUPOS_FECH = { TODAS:null, VERMELHAS:["ATM","PBA SHOP","PBA LJR","PARAÍSO","TAPAJÓS"], OTICAS:["OTC PBA","OTC TPJ"] };
+  const grupoLojas = GRUPOS_FECH[fechGrupoAtivo] || (typeof GRUPOS !== 'undefined' ? GRUPOS[fechGrupoAtivo] : null);
   const lojas = LOJAS_ALL.filter(l => !grupoLojas || grupoLojas.includes(l));
 
   const atual    = parseBase(baseAtualData);
@@ -3746,6 +3748,12 @@ function renderFechamento() {
     buildComparadasSection() +
     buildPATMSection() +
     buildComparadasPecasSection();
+  } catch(e) {
+    container.innerHTML = `<div style="background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);border-radius:8px;padding:1rem;color:#f87171;font-size:0.75rem;font-family:monospace">
+      <strong>Erro em renderFechamento:</strong><br>${e.message}<br><pre style="margin-top:0.5rem;font-size:0.65rem;white-space:pre-wrap">${e.stack||''}</pre>
+    </div>`;
+    console.error("renderFechamento:", e);
+  }
 }
 
 </script>
