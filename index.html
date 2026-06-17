@@ -3422,8 +3422,33 @@ function renderFechamento() {
   const atual    = parseBase(baseAtualData);
   const anterior = parseBase(baseAnteriorData);
 
-  const semDados = !baseAtualData.length && !baseAnteriorData.length && !allData.length;
-  if(semDados) {
+  // Em modo demo, baseAtualData/baseAnteriorData chegam vazios.
+  // Geramos dados sintéticos a partir do allData para que o Fechamento
+  // mostre algo útil mesmo sem conexão com o Sheets.
+  const isDemo = !baseAtualData.length && !baseAnteriorData.length;
+
+  function buildDemoBase(fatorAnt) {
+    // Monta um objeto no mesmo formato de parseBase() usando allData
+    const result = {};
+    allData.forEach(d => {
+      if(!d.loja || d.loja === "—") return;
+      if(!result[d.loja]) result[d.loja] = { total_qtde: 0, total_valor: 0, categorias: [] };
+      result[d.loja].total_qtde  += d.pecas  || 0;
+      result[d.loja].total_valor += d.vendas || 0;
+    });
+    if(fatorAnt !== 1) {
+      Object.values(result).forEach(r => {
+        r.total_qtde  = Math.round(r.total_qtde  * fatorAnt);
+        r.total_valor = Math.round(r.total_valor * fatorAnt);
+      });
+    }
+    return result;
+  }
+
+  const atualEfetivo    = isDemo ? buildDemoBase(1)    : atual;
+  const anteriorEfetivo = isDemo ? buildDemoBase(0.91) : anterior;  // ano anterior ~91% como demo
+
+  if(!allData.length) {
     container.innerHTML = `<div style="color:var(--muted);padding:2rem;text-align:center">Clique em 🔄 Atualizar Dados para carregar.</div>`;
     return;
   }
@@ -3433,8 +3458,8 @@ function renderFechamento() {
     let grupoQtdeAt=0, grupoQtdeAnt=0, grupoFatAt=0, grupoFatAnt=0;
 
     const lojaRows = lojas.map(loja => {
-      const a = atual[loja]    || { total_qtde:0, total_valor:0 };
-      const b = anterior[loja] || { total_qtde:0, total_valor:0 };
+      const a = atualEfetivo[loja]    || { total_qtde:0, total_valor:0 };
+      const b = anteriorEfetivo[loja] || { total_qtde:0, total_valor:0 };
       grupoQtdeAt  += a.total_qtde;  grupoQtdeAnt += b.total_qtde;
       grupoFatAt   += a.total_valor; grupoFatAnt  += b.total_valor;
       const varP = b.total_qtde  > 0 ? (a.total_qtde -b.total_qtde) /b.total_qtde *100 : (a.total_qtde>0?999:0);
@@ -3541,6 +3566,13 @@ function renderFechamento() {
     </div>`;
   }
 
+  // ── Notice se demo ─────────────────────────────────────────────────
+  const demoBanner = isDemo
+    ? `<div style="background:rgba(250,204,21,0.1);border:1px solid rgba(250,204,21,0.3);border-radius:8px;padding:0.6rem 1rem;margin-bottom:1.25rem;font-size:0.7rem;color:#b58800">
+        ⚠️ <strong>Dados de demonstração</strong> — Comparadas YoY estimadas a partir dos dados atuais. Conecte ao Sheets para dados reais.
+      </div>`
+    : "";
+
   // ── 3. COMPARADAS DE PEÇAS (por categoria) ─────────────────────────
   function buildComparadasPecasSection() {
     const CATS = ["OC","RE","CG","LE","Aces"];
@@ -3584,7 +3616,17 @@ function renderFechamento() {
     </tr>`;
 
     const temTermometro = CATS.some(c => termometrosData[c]&&termometrosData[c].length>1);
-    if(!temTermometro) return `<div class="card fech-section">
+
+    // Demo fallback: distribui as peças do allData pelas categorias de forma proporcional simulada
+    if(!temTermometro && isDemo) {
+      const CAT_PESOS = {"OC":0.40,"RE":0.10,"CG":0.25,"LE":0.15,"Aces":0.10};
+      lojas.forEach(loja => {
+        const pecasLoja = allData.filter(d=>d.loja===loja).reduce((s,d)=>s+(d.pecas||0),0);
+        CATS.forEach(cat => { dadosGrupo[loja][cat] = Math.round(pecasLoja * CAT_PESOS[cat]); });
+      });
+    }
+
+    if(!temTermometro && !isDemo) return `<div class="card fech-section">
       <div class="fech-section-title">🌡️ Comparadas de Peças (Termômetro)</div>
       <p style="color:var(--muted);font-size:0.72rem">Sem dados de termômetro carregados.</p>
     </div>`;
@@ -3698,6 +3740,7 @@ function renderFechamento() {
   }
 
   container.innerHTML =
+    demoBanner +
     buildKPIstrip() +
     buildMetaSection() +
     buildComparadasSection() +
